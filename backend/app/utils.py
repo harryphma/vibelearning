@@ -53,7 +53,7 @@ def generate_cards(text):
     1. Respond with ONLY the JSON array - no other text, no explanations
     2. The response must start with [ and end with ]
     3. Use double quotes for all strings
-    4. Include exactly 5 flashcards
+    4. Include exactly 10 flashcards
     5. Each flashcard must be unique
     
     Text to process:
@@ -99,8 +99,8 @@ def generate_cards(text):
                 formatted_flashcards.append({"question": question, "answer": answer})
         
         # Ensure we have exactly 5 cards
-        if len(formatted_flashcards) != 5:
-            raise ValueError(f"Expected 5 cards, got {len(formatted_flashcards)}")
+        if len(formatted_flashcards) != 10:
+            raise ValueError(f"Expected 10 cards, got {len(formatted_flashcards)}")
             
         return formatted_flashcards
         
