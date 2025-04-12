@@ -1,7 +1,9 @@
 google-cloud-texttospeech
 dotenv
-pyaudiofastapi
-dotenv
 pypdf
 google-generativeai
 passlib
+uvicorn
+fastapi
+PyPDF2
+python-multipart

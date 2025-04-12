@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from utils import generate_cards, parsePDF_to_text
+from app.utils import generate_cards, parsePDF_to_text
 import tempfile
 import os
 
