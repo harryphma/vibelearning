@@ -3,71 +3,71 @@
 @config "../tailwind.config.js";
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 13%;
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 0 0% 13%; /* #212121 */
 
-    --card: 0 0% 96%;
-    --card-foreground: 0 0% 13%;
+    --card: 0 0% 96%; /* #F5F5F5 */
+    --card-foreground: 0 0% 13%; /* #212121 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 0 0% 13%; /* #212121 */
 
-    --primary: 231 44% 48%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 231 48% 48%; /* #3F51B5 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --secondary: 187 100% 42%;
-    --secondary-foreground: 0 0% 13%;
+    --secondary: 187 100% 42%; /* #00BCD4 */
+    --secondary-foreground: 0 0% 13%; /* #212121 */
 
-    --muted: 200 15% 73%;
-    --muted-foreground: 200 19% 40%;
+    --muted: 200 15% 73%; /* #B0BEC5 */
+    --muted-foreground: 200 19% 40%; /* darker shade of #B0BEC5 */
 
-    --accent: 14 100% 63%;
-    --accent-foreground: 0 0% 13%;
+    --accent: 14 100% 63%; /* #FF7043 - Soft Coral */
+    --accent-foreground: 0 0% 13%; /* #212121 */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 15% 73%;
-    --input: 200 15% 73%;
-    --ring: 231 44% 48%;
+    --border: 200 15% 73%; /* #B0BEC5 */
+    --input: 200 15% 73%; /* #B0BEC5 */
+    --ring: 231 48% 48%; /* #3F51B5 */
 
     --radius: 0.5rem;
 
-    --success: 120 29% 74%;
-    --warning: 54 100% 62%;
+    --success: 120 29% 74%; /* #A5D6A7 - Fresh Mint */
+    --warning: 54 100% 62%; /* #FFEB3B - Warm Yellow */
   }
 
   .dark {
-    --background: 0 0% 13%;
-    --foreground: 0 0% 100%;
+    --background: 233 77% 30%; /* #1A237E - Deep Indigo */
+    --foreground: 0 0% 100%; /* #FFFFFF */
 
-    --card: 0 0% 20%;
-    --card-foreground: 0 0% 100%;
+    --card: 200 15% 26%; /* #37474F - Teal Gray */
+    --card-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --popover: 0 0% 13%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 233 77% 30%; /* #1A237E - Deep Indigo */
+    --popover-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --primary: 231 44% 48%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 231 48% 48%; /* #3F51B5 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --secondary: 187 100% 42%;
-    --secondary-foreground: 0 0% 13%;
+    --secondary: 187 100% 42%; /* #00BCD4 */
+    --secondary-foreground: 0 0% 13%; /* #212121 */
 
-    --muted: 200 15% 40%;
-    --muted-foreground: 200 15% 73%;
+    --muted: 200 15% 40%; /* darker #37474F */
+    --muted-foreground: 200 15% 73%; /* lighter #37474F */
 
-    --accent: 14 100% 63%;
-    --accent-foreground: 0 0% 13%;
+    --accent: 14 100% 63%; /* #FF7043 - Soft Coral */
+    --accent-foreground: 0 0% 13%; /* #212121 */
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 15% 40%;
-    --input: 200 15% 40%;
-    --ring: 231 44% 48%;
+    --border: 200 15% 40%; /* darker #37474F */
+    --input: 200 15% 40%; /* darker #37474F */
+    --ring: 231 48% 48%; /* #3F51B5 */
 
-    --success: 120 29% 50%;
-    --warning: 54 100% 50%;
+    --success: 154 92% 67%; /* #69F0AE - Neon Mint */
+    --warning: 54 100% 50%; /* Darker Warm Yellow */
   }
 }
 
