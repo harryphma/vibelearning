@@ -1,5 +1,5 @@
 .env
 __pycache__
-venv/
 .DS_Store
+venv/
 tts_credentials.json

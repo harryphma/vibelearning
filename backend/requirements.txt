@@ -1,4 +1,6 @@
-fastapi
+google-cloud-texttospeech
+dotenv
+pyaudiofastapi
 dotenv
 pypdf
 google-generativeai
