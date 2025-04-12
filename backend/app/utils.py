@@ -86,9 +86,12 @@ def generate_cards(text):
             question = card.get("question", "").strip()
             answer = card.get("answer", "").strip()
             if question and answer:
-                formatted_flashcards.append({"question": question, "answer": answer})
+                formatted_flashcards.append({
+                    "question": question,
+                    "answer": answer
+                })
         
-        # Ensure we have exactly 5 cards
+        # Ensure we have exactly 10 cards
         if len(formatted_flashcards) != 10:
             raise ValueError(f"Expected 10 cards, got {len(formatted_flashcards)}")
             
@@ -182,7 +185,10 @@ def topic_selection(subject):
             question = card.get("question", "").strip()
             answer = card.get("answer", "").strip()
             if question and answer:
-                formatted_flashcards.append({"question": question, "answer": answer})
+                formatted_flashcards.append({
+                    "question": question,
+                    "answer": answer
+                })
         
         # Ensure we have exactly 10 cards
         if len(formatted_flashcards) != 10:
@@ -198,4 +204,98 @@ def topic_selection(subject):
         print(f"Error generating flashcards: {e}")
         print(f"Raw response: {response_text}")
         return []
+
+def edit_flashcards(flashcards, user_input):
+    """
+    Edit existing flashcards based on user input using the Gemini API.
+    
+    Args:
+        flashcards (list): The original list of flashcards
+        user_input (str): User instructions for modifying the flashcards
+        
+    Returns:
+        list: The updated list of flashcards
+    """
+    genai.configure(api_key=api_key)
+
+    # Define the model and prompt
+    model = genai.GenerativeModel(
+        'gemini-2.0-flash',  
+        generation_config={
+            "temperature": 0.3,  # Lower temperature for more consistent edits
+            "top_p": 0.8,
+            "top_k": 40,
+        }
+    )
+    
+    # Convert flashcards to a string representation
+    flashcards_str = json.dumps(flashcards, indent=2)
+    
+    prompt = f"""
+    You are a JSON editor. Your task is to modify the following flashcards based on the user's instructions.
+    You must respond with ONLY a JSON array containing the modified flashcards.
+    
+    Current flashcards:
+    {flashcards_str}
+    
+    User instructions:
+    {user_input}
+    
+    IMPORTANT:
+    1. Respond with ONLY the JSON array - no other text, no explanations
+    2. The response must start with [ and end with ]
+    3. Use double quotes for all strings
+    4. Maintain the same number of flashcards
+    5. Each flashcard must have exactly these two fields: "question" and "answer"
+    6. Follow the user's instructions precisely
+    7. If the user wants to add new flashcards, add them to the array
+    8. If the user wants to remove flashcards, remove them from the array
+    9. If the user wants to modify specific flashcards, modify them according to the instructions
+    """
+
+    try:
+        # Generate the modified flashcards
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        # Debug: Print the raw response
+        
+        # Clean the response text
+        response_text = response_text.replace('```json', '').replace('```', '').strip()
+        
+        # Ensure the response starts with [ and ends with ]
+        if not response_text.startswith('['):
+            response_text = '[' + response_text
+        if not response_text.endswith(']'):
+            response_text = response_text + ']'
+            
+        # Convert the response text to JSON
+        modified_flashcards = json.loads(response_text)
+        
+        if not isinstance(modified_flashcards, list):
+            raise ValueError("Response is not a JSON array")
+            
+        # Format and validate the flashcards
+        formatted_flashcards = []
+        for card in modified_flashcards:
+            if not isinstance(card, dict):
+                continue
+            question = card.get("question", "").strip()
+            answer = card.get("answer", "").strip()
+            if question and answer:
+                formatted_flashcards.append({
+                    "question": question,
+                    "answer": answer
+                })
+        
+        return formatted_flashcards
+        
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        print(f"Raw response: {response_text}")
+        return flashcards  # Return original flashcards if parsing fails
+    except Exception as e:
+        print(f"Error modifying flashcards: {e}")
+        print(f"Raw response: {response_text}")
+        return flashcards  # Return original flashcards if any error occurs
 
