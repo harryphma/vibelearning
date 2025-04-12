@@ -39,11 +39,11 @@ export function TranscriptView() {
   ]
 
   return (
-    <Card className="h-[calc(50vh-6rem)]">
+    <Card className="h-auto min-h-[calc(50vh-6rem)] flex flex-col">
       <CardHeader className="p-4">
         <CardTitle className="text-lg">Transcript</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 flex-1">
         <ScrollArea className="h-[calc(50vh-10rem)]">
           <div className="p-4 space-y-4">
             {transcriptSegments.map((segment) => (
