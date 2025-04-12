@@ -1,6 +1,5 @@
 google-cloud-texttospeech
 dotenv
-dotenv
 pypdf
 google-generativeai
 passlib

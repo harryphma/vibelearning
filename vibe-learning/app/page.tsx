@@ -5,6 +5,7 @@ import { ChatInput } from "@/components/chat-input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { BookOpen, Brain, Lightbulb } from "lucide-react"
+import { TTSTest } from "@/components/tts-test"
 
 export default function HomePage() {
   const examplePrompts = [
@@ -67,6 +68,8 @@ export default function HomePage() {
             <ChatInput />
           </div>
         </div>
+
+      {/* <TTSTest /> */}
       </main>
     </div>
   )
