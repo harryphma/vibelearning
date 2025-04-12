@@ -5,7 +5,6 @@ import os
 from dotenv import load_dotenv
 import json
 
-
 class Card(typing.TypedDict):
     question: str
     answer: str
