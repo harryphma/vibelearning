@@ -4,3 +4,5 @@ __pycache__
 tts_credentials.json/app/__pycache__
 venv/
 tts_credentials.json
+/app/debug_audio/*
+/app/debug_audio
