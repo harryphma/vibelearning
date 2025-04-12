@@ -26,7 +26,7 @@ def generate_cards(text):
 
     # Define the model and prompt
     model = genai.GenerativeModel(
-        'gemini-2.0-flash',  # Using gemini-pro for better JSON handling
+        'gemini-2.0-flash',  
         generation_config={
             "temperature": 0.1,
             "top_p": 0.8,
@@ -64,15 +64,6 @@ def generate_cards(text):
         response = model.generate_content(prompt)
         response_text = response.text.strip()
         
-        # Debug: Print the raw response
-        # print("Raw response from model:")
-        # print(response_text)
-        # print("\nResponse length:", len(response_text))
-        # print("First character:", repr(response_text[0]) if response_text else "empty")
-        # print("Last character:", repr(response_text[-1]) if response_text else "empty")
-        
-        # Clean the response text
-        # Remove any markdown code block markers if present
         response_text = response_text.replace('```json', '').replace('```', '').strip()
         
         # Ensure the response starts with [ and ends with ]
@@ -113,6 +104,98 @@ def generate_cards(text):
         return []
 
 
-# text = parsePDF_to_text("tech.pdf")
-# cards = generate_cards(text)
-# print(json.dumps(cards, indent=2))
+def topic_selection(subject):
+    """
+    Generate flashcards based on a user-provided subject.
+    
+    Args:
+        subject (str): The subject or topic to generate flashcards for (e.g., "Arithmetic")
+        
+    Returns:
+        list: A list of flashcards with question and answer pairs
+    """
+    genai.configure(api_key=api_key)
+
+    # Define the model and prompt
+    model = genai.GenerativeModel(
+        'gemini-2.0-flash',  
+        generation_config={
+            "temperature": 0.7,  # Slightly higher temperature for more creative responses
+            "top_p": 0.8,
+            "top_k": 40,
+        }
+    )
+    
+    prompt = f"""
+    You are a JSON generator. Your task is to create exactly 10 flashcards about the subject: {subject}.
+    You must respond with ONLY a JSON array containing exactly 10 objects.
+    
+    Each object in the array must have exactly these two fields:
+    - "question": A clear, concise question about the subject
+    - "answer": The corresponding answer
+    
+    Example format:
+    [
+        {{"question": "What is X?", "answer": "X is Y"}},
+        {{"question": "How does Z work?", "answer": "Z works by..."}}
+    ]
+    
+    IMPORTANT:
+    1. Respond with ONLY the JSON array - no other text, no explanations
+    2. The response must start with [ and end with ]
+    3. Use double quotes for all strings
+    4. Include exactly 10 flashcards
+    5. Each flashcard must be unique
+    6. Focus on the main concepts of {subject}
+    7. Make questions and answers educational and informative
+    """
+
+    try:
+        # Generate the flashcards
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        # Debug: Print the raw response
+        print("Raw response from model:")
+        print(response_text)
+        
+        # Clean the response text
+        response_text = response_text.replace('```json', '').replace('```', '').strip()
+        
+        # Ensure the response starts with [ and ends with ]
+        if not response_text.startswith('['):
+            response_text = '[' + response_text
+        if not response_text.endswith(']'):
+            response_text = response_text + ']'
+            
+        # Convert the response text to JSON
+        flashcards = json.loads(response_text)
+        
+        if not isinstance(flashcards, list):
+            raise ValueError("Response is not a JSON array")
+            
+        # Format and validate the flashcards
+        formatted_flashcards = []
+        for card in flashcards:
+            if not isinstance(card, dict):
+                continue
+            question = card.get("question", "").strip()
+            answer = card.get("answer", "").strip()
+            if question and answer:
+                formatted_flashcards.append({"question": question, "answer": answer})
+        
+        # Ensure we have exactly 10 cards
+        if len(formatted_flashcards) != 10:
+            raise ValueError(f"Expected 10 cards, got {len(formatted_flashcards)}")
+            
+        return formatted_flashcards
+        
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
+        print(f"Raw response: {response_text}")
+        return []
+    except Exception as e:
+        print(f"Error generating flashcards: {e}")
+        print(f"Raw response: {response_text}")
+        return []
+
