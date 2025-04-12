@@ -8,3 +8,4 @@ uvicorn
 fastapi
 PyPDF2
 gtts
+python-multipart

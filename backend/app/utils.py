@@ -10,7 +10,7 @@ class Card(typing.TypedDict):
     answer: str
 
 load_dotenv()
-api_key = os.getenv("TTS_API_KEY")
+api_key = os.getenv("API_KEY")
 
 def parsePDF_to_text(file_name):
     #take an input pdf, convert to text
