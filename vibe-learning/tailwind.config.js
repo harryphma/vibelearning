@@ -1,8 +1,8 @@
 import animate from "tailwindcss-animate"
 
 const config = {
-  darkMode: "class",
-  content: [
+  darkMode: ["class", ".dark"],
+    content: [
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
@@ -19,101 +19,116 @@ const config = {
     },
     extend: {
       colors: {
-        // Primary colors
+        // Vibrant primary color (bright purple)
         primary: {
-          DEFAULT: "#3F51B5", // Indigo Blue
-          50: "#E8EAF6",
-          100: "#C5CAE9",
-          200: "#9FA8DA",
-          300: "#7986CB",
-          400: "#5C6BC0",
-          500: "#3F51B5",
-          600: "#3949AB",
-          700: "#303F9F",
-          800: "#283593",
-          900: "#1A237E",
-          950: "#0D1257",
+          DEFAULT: "#7C3AED",
+          50: "#F5F3FF",
+          100: "#EDE9FE",
+          200: "#DDD6FE",
+          300: "#C4B5FD",
+          400: "#A78BFA",
+          500: "#8B5CF6",
+          600: "#7C3AED",
+          700: "#6D28D9",
+          800: "#5B21B6",
+          900: "#4C1D95",
+          950: "#2E1065",
         },
-        // Bright Cyan - for highlights, links, accents
-        cyan: {
-          DEFAULT: "#00BCD4",
-          50: "#E0F7FA",
-          100: "#B2EBF2",
-          200: "#80DEEA",
-          300: "#4DD0E1",
-          400: "#26C6DA",
-          500: "#00BCD4",
-          600: "#00ACC1",
-          700: "#0097A7",
-          800: "#00838F",
-          900: "#006064",
-          950: "#004D51",
+        // Secondary color (teal)
+        secondary: {
+          DEFAULT: "#0EA5E9",
+          50: "#F0F9FF",
+          100: "#E0F2FE",
+          200: "#BAE6FD",
+          300: "#7DD3FC",
+          400: "#38BDF8",
+          500: "#0EA5E9",
+          600: "#0284C7",
+          700: "#0369A1",
+          800: "#075985",
+          900: "#0C4A6E",
+          950: "#082F49",
         },
-        // Fresh Mint - for success states, progress bars
-        mint: {
-          DEFAULT: "#A5D6A7",
-          50: "#E8F5E9",
-          100: "#C8E6C9",
-          200: "#A5D6A7",
-          300: "#81C784",
-          400: "#66BB6A",
-          500: "#4CAF50",
-          600: "#43A047",
-          700: "#388E3C",
-          800: "#2E7D32",
-          900: "#1B5E20",
-          950: "#0A3D0A",
+        // Accent color (coral)
+        accent: {
+          DEFAULT: "#F97316",
+          50: "#FFF7ED",
+          100: "#FFEDD5",
+          200: "#FED7AA",
+          300: "#FDBA74",
+          400: "#FB923C",
+          500: "#F97316",
+          600: "#EA580C",
+          700: "#C2410C",
+          800: "#9A3412",
+          900: "#7C2D12",
+          950: "#431407",
         },
-        // Warm Yellow - for tips, warnings, energy boost
-        yellow: {
-          DEFAULT: "#FFEB3B",
-          50: "#FFFDE7",
-          100: "#FFF9C4",
-          200: "#FFF59D",
-          300: "#FFF176",
-          400: "#FFEE58",
-          500: "#FFEB3B",
-          600: "#FDD835",
-          700: "#FBC02D",
-          800: "#F9A825",
-          900: "#F57F17",
-          950: "#E65100",
+        // Success color (green)
+        success: {
+          DEFAULT: "#10B981",
+          50: "#ECFDF5",
+          100: "#D1FAE5",
+          200: "#A7F3D0",
+          300: "#6EE7B7",
+          400: "#34D399",
+          500: "#10B981",
+          600: "#059669",
+          700: "#047857",
+          800: "#065F46",
+          900: "#064E3B",
+          950: "#022C22",
         },
-        // Soft Coral - for calls-to-action, button hover
-        coral: {
-          DEFAULT: "#FF7043",
-          50: "#FBE9E7",
-          100: "#FFCCBC",
-          200: "#FFAB91",
-          300: "#FF8A65",
-          400: "#FF7043",
-          500: "#FF5722",
-          600: "#F4511E",
-          700: "#E64A19",
-          800: "#D84315",
-          900: "#BF360C",
-          950: "#8C2703",
+        // Error color (red)
+        error: {
+          DEFAULT: "#EF4444",
+          50: "#FEF2F2",
+          100: "#FEE2E2",
+          200: "#FECACA",
+          300: "#FCA5A5",
+          400: "#F87171",
+          500: "#EF4444",
+          600: "#DC2626",
+          700: "#B91C1C",
+          800: "#991B1B",
+          900: "#7F1D1D",
+          950: "#450A0A",
         },
-        // Background-Neutral colors
-        background: "#FFFFFF", // White - Main background
-        card: "#F5F5F5", // Light Gray - Card backgrounds, section dividers
-        muted: {
-          DEFAULT: "#B0BEC5", // Cool Gray - Text-muted, icons, input borders
-          foreground: "#546E7A",
+        // Warning color (amber)
+        warning: {
+          DEFAULT: "#F59E0B",
+          50: "#FFFBEB",
+          100: "#FEF3C7",
+          200: "#FDE68A",
+          300: "#FCD34D",
+          400: "#FBBF24",
+          500: "#F59E0B",
+          600: "#D97706",
+          700: "#B45309",
+          800: "#92400E",
+          900: "#78350F",
+          950: "#451A03",
         },
-        foreground: "#212121", // Charcoal - Primary text
-
-        // Keep the existing system colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
       },
       borderRadius: {

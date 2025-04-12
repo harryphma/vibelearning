@@ -46,9 +46,9 @@ export function AIFeedback() {
               {feedbackPoints.map((point, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
                   {point.type === "success" ? (
-                    <CheckCircle className="h-4 w-4 text-mint mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                   ) : (
-                    <AlertCircle className="h-4 w-4 text-yellow mt-0.5 flex-shrink-0" />
+                    <AlertCircle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
                   )}
                   <span>{point.text}</span>
                 </li>

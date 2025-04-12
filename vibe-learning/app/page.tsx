@@ -10,15 +10,15 @@ export default function HomePage() {
   const examplePrompts = [
     {
       title: "Create flashcards about photosynthesis",
-      icon: <Lightbulb className="h-5 w-5 text-cyan" />,
+      icon: <Lightbulb className="h-5 w-5 text-primary" />,
     },
     {
       title: "Generate a deck on Spanish verb conjugations",
-      icon: <Lightbulb className="h-5 w-5 text-cyan" />,
+      icon: <Lightbulb className="h-5 w-5 text-primary" />,
     },
     {
       title: "Make flashcards for JavaScript fundamentals",
-      icon: <Lightbulb className="h-5 w-5 text-cyan" />,
+      icon: <Lightbulb className="h-5 w-5 text-primary" />,
     },
   ]
 
@@ -46,17 +46,13 @@ export default function HomePage() {
           </div>
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
-            <Button
-              size="lg"
-              className="h-24 text-lg bg-primary hover:bg-primary/90"
-              onClick={() => (window.location.href = "/flashcards")}
-            >
+            <Button size="lg" className="h-24 text-lg" onClick={() => (window.location.href = "/flashcards")}>
               <BookOpen className="mr-2 h-5 w-5" />
               Create Flashcards
             </Button>
             <Button
               size="lg"
-              className="h-24 text-lg border-cyan text-cyan hover:bg-cyan hover:text-white"
+              className="h-24 text-lg"
               variant="outline"
               onClick={() => (window.location.href = "/teach")}
             >

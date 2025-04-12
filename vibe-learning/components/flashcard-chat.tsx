@@ -67,7 +67,7 @@ export function FlashcardChat() {
               <div
                 className={cn(
                   "max-w-[80%] rounded-lg p-3",
-                  message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-card",
+                  message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
                 )}
               >
                 <p className="text-sm">{message.content}</p>

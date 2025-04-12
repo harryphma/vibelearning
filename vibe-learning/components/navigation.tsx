@@ -15,9 +15,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { BookOpen, Brain, Home, Settings, User } from "lucide-react"
 
-// Import the ThemeToggle component
-import { ThemeToggle } from "@/components/theme-toggle"
-
 export function Navigation() {
   const pathname = usePathname()
 
@@ -43,7 +40,7 @@ export function Navigation() {
     <header className="border-b">
       <div className="flex h-16 items-center px-4 md:px-6">
         <div className="flex items-center gap-2">
-          <BookOpen className="h-6 w-6 text-cyan" />
+          <BookOpen className="h-6 w-6 text-primary" />
           <span className="text-xl font-bold">Vibe Learning</span>
         </div>
         <nav className="ml-auto flex items-center gap-4 md:gap-6">
@@ -62,7 +59,6 @@ export function Navigation() {
               </Link>
             ))}
           </div>
-          <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">

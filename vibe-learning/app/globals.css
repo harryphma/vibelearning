@@ -1,6 +1,6 @@
-@import "tailwindcss/preflight";
-@tailwind utilities;
-
+@import "tailwindcss";
+@import "tw-animate-css";
+@config "../tailwind.config.js";
 @layer base {
   :root {
     --background: 0 0% 100%;

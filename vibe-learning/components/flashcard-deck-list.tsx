@@ -79,7 +79,7 @@ export function FlashcardDeckList() {
                 key={deck.id}
                 className={cn(
                   "w-full text-left p-3 rounded-md mb-1 transition-colors",
-                  selectedDeckId === deck.id ? "bg-cyan/10 text-cyan" : "hover:bg-card",
+                  selectedDeckId === deck.id ? "bg-primary/10 text-primary" : "hover:bg-muted",
                 )}
                 onClick={() => setSelectedDeckId(deck.id)}
               >

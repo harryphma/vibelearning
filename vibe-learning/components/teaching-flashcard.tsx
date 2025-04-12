@@ -57,7 +57,7 @@ export function TeachingFlashcard() {
       <CardContent className="p-6">
         <div className="flex flex-col items-center">
           <div className="w-full max-w-2xl cursor-pointer mb-6" onClick={handleFlip}>
-            <Card className={cn("border-2", isFlipped ? "border-cyan" : "border-primary")}>
+            <Card className={cn("border-2", isFlipped ? "border-secondary" : "border-primary")}>
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold mb-4">{isFlipped ? "Answer" : "Question"}</h3>
                 <p className="text-lg">{isFlipped ? currentCard.answer : currentCard.question}</p>
