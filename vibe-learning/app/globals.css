@@ -37,38 +37,7 @@
     --warning: 54 100% 62%; /* #FFEB3B - Warm Yellow */
   }
 
-  .dark {
-    --background: 233 77% 30%; /* #1A237E - Deep Indigo */
-    --foreground: 0 0% 100%; /* #FFFFFF */
 
-    --card: 200 15% 26%; /* #37474F - Teal Gray */
-    --card-foreground: 0 0% 100%; /* #FFFFFF */
-
-    --popover: 233 77% 30%; /* #1A237E - Deep Indigo */
-    --popover-foreground: 0 0% 100%; /* #FFFFFF */
-
-    --primary: 231 48% 48%; /* #3F51B5 */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF */
-
-    --secondary: 187 100% 42%; /* #00BCD4 */
-    --secondary-foreground: 0 0% 13%; /* #212121 */
-
-    --muted: 200 15% 40%; /* darker #37474F */
-    --muted-foreground: 200 15% 73%; /* lighter #37474F */
-
-    --accent: 14 100% 63%; /* #FF7043 - Soft Coral */
-    --accent-foreground: 0 0% 13%; /* #212121 */
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 200 15% 40%; /* darker #37474F */
-    --input: 200 15% 40%; /* darker #37474F */
-    --ring: 231 48% 48%; /* #3F51B5 */
-
-    --success: 154 92% 67%; /* #69F0AE - Neon Mint */
-    --warning: 54 100% 50%; /* Darker Warm Yellow */
-  }
 }
 
 @layer base {
