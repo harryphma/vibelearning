@@ -36,8 +36,8 @@ def generate_cards(text):
     )
     
     prompt = f"""
-    You are a JSON generator. Your task is to create exactly 5 flashcards from the given text.
-    You must respond with ONLY a JSON array containing exactly 5 objects.
+    You are a JSON generator. Your task is to create exactly 10 flashcards from the given text.
+    You must respond with ONLY a JSON array containing exactly 10 objects.
     
     Each object in the array must have exactly these two fields:
     - "question": A clear, concise question about the text
@@ -114,6 +114,6 @@ def generate_cards(text):
         return []
 
 
-text = parsePDF_to_text("tech.pdf")
-cards = generate_cards(text)
-print(json.dumps(cards, indent=2))
+# text = parsePDF_to_text("tech.pdf")
+# cards = generate_cards(text)
+# print(json.dumps(cards, indent=2))
