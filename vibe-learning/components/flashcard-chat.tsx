@@ -3,12 +3,10 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { Edit2, Send, Plus } from "lucide-react"
-import { FlashcardDeck, FlashcardData, searchDecks, mockDecks } from "@/data/mock-flashcards"
+import { FlashcardDeck, FlashcardData } from "@/data/mock-flashcards"
+import { ChatInput } from "@/components/chat-input"
 
 type Message = {
   id: string
@@ -16,6 +14,8 @@ type Message = {
   sender: "user" | "ai"
   timestamp: Date
   isLoading?: boolean
+  hasFile?: boolean
+  fileName?: string
 }
 
 interface FlashcardChatProps {
@@ -24,6 +24,9 @@ interface FlashcardChatProps {
   isEditMode?: boolean;
   isFullPage?: boolean;
 }
+
+// API URL - default to localhost if not provided in env
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export function FlashcardChat({ 
   onNewDeckCreated,
@@ -36,13 +39,15 @@ export function FlashcardChat({
       id: "1",
       content: isEditMode && selectedDeck 
         ? `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?` 
-        : "Welcome to the flashcard creator! What subject would you like to create flashcards for?",
+        : "Welcome to the flashcard creator! What subject would you like to create flashcards for? You can also upload a PDF file to generate flashcards.",
       sender: "ai",
       timestamp: new Date(),
     },
   ])
-  const [input, setInput] = useState("")
   const [isAiResponding, setIsAiResponding] = useState(false)
+  const [awaitingDeckName, setAwaitingDeckName] = useState(false)
+  const [pendingFileCards, setPendingFileCards] = useState<FlashcardData[] | null>(null)
+  const [pendingSubject, setPendingSubject] = useState<string | null>(null)
 
   // Reset messages when selected deck changes or edit mode changes
   useEffect(() => {
@@ -56,92 +61,205 @@ export function FlashcardChat({
     } else if (!isEditMode && !selectedDeck) {
       setMessages([{
         id: "new-deck",
-        content: "Welcome to the flashcard creator! What subject would you like to create flashcards for?",
+        content: "Welcome to the flashcard creator! What subject would you like to create flashcards for? You can also upload a PDF file to generate flashcards.",
         sender: "ai",
         timestamp: new Date(),
       }]);
     }
+    setAwaitingDeckName(false);
+    setPendingFileCards(null);
+    setPendingSubject(null);
   }, [isEditMode, selectedDeck]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || isAiResponding) return
+  const handleSendMessage = async (message: string, file: File | null = null) => {
+    if (isAiResponding) return;
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
-      content: input,
+      content: message,
       sender: "user",
       timestamp: new Date(),
+      hasFile: !!file,
+      fileName: file?.name
     }
+
+    const displayContent = file 
+      ? `${message ? message + " " : ""}[File: ${file.name}]` 
+      : message;
+
+    const userDisplayMessage: Message = {
+      ...userMessage,
+      content: displayContent,
+    };
 
     const loadingMessage: Message = {
       id: `ai-loading-${Date.now()}`,
-      content: isEditMode ? "Updating flashcards..." : "Generating flashcards...",
+      content: isEditMode 
+        ? "Updating flashcards..." 
+        : file 
+          ? "Processing your file..." 
+          : awaitingDeckName 
+            ? "Creating your deck..." 
+            : "Generating flashcards...",
       sender: "ai",
       timestamp: new Date(),
       isLoading: true,
     }
 
-    setMessages([...messages, userMessage, loadingMessage])
-    setInput("")
-    setIsAiResponding(true)
+    setMessages(prev => [...prev, userDisplayMessage, loadingMessage]);
+    setIsAiResponding(true);
 
-    // Process the user input
-    setTimeout(() => {
-      let aiResponse = ""
-      let finalDeck: FlashcardDeck | null = null
-      
-      if (isEditMode && selectedDeck) {
-        // In edit mode, simulate updating the selected deck
-        finalDeck = {
-          ...selectedDeck,
-          cards: simulateCardUpdate(selectedDeck.cards, input)
-        };
-        aiResponse = `I've updated the "${selectedDeck.title}" deck based on your input. The deck now has ${finalDeck.cards.length} cards.`;
-      } else {
-        // In create mode, look for matching decks or create new ones
-        const matchedDeck = searchDecks(input);
-        finalDeck = matchedDeck;
+    try {
+      if (awaitingDeckName && (pendingFileCards || pendingSubject)) {
+        // User is providing a name for the deck
+        const deckName = message.trim();
+        let finalCards = pendingFileCards;
         
-        // If no direct match but contains arithmetic related words, use arithmetic deck
-        const arithmeticTerms = ["math", "arithmetic", "addition", "subtraction", "multiplication", "division", "numbers", "calculation"]
-        const inputLower = input.toLowerCase()
-        const isArithmeticRelated = arithmeticTerms.some(term => inputLower.includes(term))
-        
-        if (!matchedDeck && isArithmeticRelated) {
-          finalDeck = mockDecks.arithmetic
-          aiResponse = `I've created ${mockDecks.arithmetic.cards.length} flashcards about Basic Arithmetic for you! These include multiplication, division, addition and other fundamental operations.`
-        } else if (matchedDeck) {
-          aiResponse = `I found a deck on "${matchedDeck.title}" with ${matchedDeck.cards.length} cards! I've created this deck for you.`
-        } else {
-          aiResponse = "I couldn't find a deck matching that subject. Try topics like 'arithmetic', 'biology', or 'programming'."
+        // If we have pending subject but no cards (text-only flow),
+        // create some sample flashcards for this subject
+        if (!finalCards && pendingSubject) {
+          // This would be replaced by API call in production
+          finalCards = [
+            {
+              id: `card-${Date.now()}-1`,
+              question: `What is ${pendingSubject}?`,
+              answer: `${pendingSubject} is a subject that needs to be learned.`
+            },
+            {
+              id: `card-${Date.now()}-2`,
+              question: `Why is ${pendingSubject} important?`,
+              answer: `${pendingSubject} is important for understanding key concepts.`
+            }
+          ];
         }
-      }
 
-      // Remove loading message and add real response
+        if (finalCards) {
+          const newDeck: FlashcardDeck = {
+            id: `deck-${Date.now()}`,
+            title: deckName,
+            subject: pendingSubject || deckName.toLowerCase(),
+            cards: finalCards,
+            createdAt: new Date().toISOString(),
+          };
+
+          if (onNewDeckCreated) {
+            onNewDeckCreated(newDeck);
+          }
+
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: `I've created your "${deckName}" deck with ${finalCards.length} flashcards. You can now start studying!`,
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        }
+
+        // Reset states
+        setAwaitingDeckName(false);
+        setPendingFileCards(null);
+        setPendingSubject(null);
+      } 
+      else if (file) {
+        // Handle file upload to generate flashcards
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${API_URL}/generate`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const cards = await response.json();
+        
+        // Store the generated cards and ask for deck name
+        setPendingFileCards(cards);
+        setAwaitingDeckName(true);
+        
+        // Remove loading message and add response asking for deck name
+        setMessages(prev => {
+          const filteredMessages = prev.filter(msg => !msg.isLoading);
+          return [...filteredMessages, {
+            id: `ai-${Date.now()}`,
+            content: `Great! I've processed your file and created ${cards.length} flashcards. What would you like to name this deck?`,
+            sender: "ai",
+            timestamp: new Date(),
+          }];
+        });
+      } 
+      else if (isEditMode && selectedDeck) {
+        // In edit mode, update the selected deck
+        const updatedCards = simulateCardUpdate(selectedDeck.cards, message);
+        const finalDeck = {
+          ...selectedDeck,
+          cards: updatedCards
+        };
+        
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        if (onNewDeckCreated) {
+          onNewDeckCreated(finalDeck);
+        }
+
+        setMessages(prev => {
+          const filteredMessages = prev.filter(msg => !msg.isLoading);
+          return [...filteredMessages, {
+            id: `ai-${Date.now()}`,
+            content: `I've updated the "${selectedDeck.title}" deck based on your input. The deck now has ${updatedCards.length} cards.`,
+            sender: "ai",
+            timestamp: new Date(),
+          }];
+        });
+      } 
+      else {
+        // Regular text input for creating a new deck - ask for name first
+        setAwaitingDeckName(true);
+        setPendingSubject(message.trim());
+        
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        setMessages(prev => {
+          const filteredMessages = prev.filter(msg => !msg.isLoading);
+          return [...filteredMessages, {
+            id: `ai-${Date.now()}`,
+            content: `I can create flashcards about "${message}". What would you like to name this deck?`,
+            sender: "ai",
+            timestamp: new Date(),
+          }];
+        });
+      }
+    } catch (error) {
+      console.error("Error processing message:", error);
+      
       setMessages(prev => {
-        const filteredMessages = prev.filter(msg => !msg.isLoading)
+        const filteredMessages = prev.filter(msg => !msg.isLoading);
         return [...filteredMessages, {
           id: `ai-${Date.now()}`,
-          content: aiResponse,
+          content: "Sorry, there was an error processing your request. Please try again.",
           sender: "ai",
           timestamp: new Date(),
-        }]
-      })
+        }];
+      });
       
-      // Call the callback function to create/update the deck in the parent component
-      if (finalDeck && onNewDeckCreated) {
-        onNewDeckCreated(finalDeck)
-      }
-      
-      setIsAiResponding(false)
-    }, 1500) // Slightly longer delay for more realistic AI "thinking"
+      // Reset states on error
+      setAwaitingDeckName(false);
+      setPendingFileCards(null);
+      setPendingSubject(null);
+    } finally {
+      setIsAiResponding(false);
+    }
   }
 
   // Helper function to simulate updating cards based on user input
   function simulateCardUpdate(existingCards: FlashcardData[], userInput: string): FlashcardData[] {
-    // This is a simplified simulation - in a real app, you'd likely use AI to generate new cards
-    // or modify existing ones based on user input
     const lowercaseInput = userInput.toLowerCase();
     
     // Check if user is asking to add a new card
@@ -157,7 +275,6 @@ export function FlashcardChat({
       return [...existingCards, newCard];
     }
     
-    // Just return the existing cards if no clear action requested
     return [...existingCards];
   }
 
@@ -173,7 +290,9 @@ export function FlashcardChat({
         <p className="text-sm text-muted-foreground">
           {isEditMode 
             ? "Chat with AI to edit and improve your flashcards" 
-            : "Chat with AI to create new flashcard decks"
+            : awaitingDeckName
+              ? "Please provide a name for your flashcard deck"
+              : "Chat with AI to create new flashcard decks or upload a PDF"
           }
         </p>
       </div>
@@ -207,36 +326,18 @@ export function FlashcardChat({
       </ScrollArea>
 
       <div className="p-4 border-t">
-        <form onSubmit={handleSendMessage} className="relative">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={isEditMode 
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          isDisabled={isAiResponding}
+          placeholder={
+            isEditMode 
               ? "Type what you want to modify or add to this deck..." 
-              : "Type a subject (e.g., 'arithmetic', 'biology')..."
-            }
-            className={cn(
-              "resize-none pr-12",
-              isFullPage ? "min-h-[120px]" : "min-h-[80px]"
-            )}
-            disabled={isAiResponding}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                handleSendMessage(e)
-              }
-            }}
-          />
-          <Button 
-            type="submit" 
-            size="icon" 
-            className="absolute bottom-2 right-2 rounded-full" 
-            disabled={!input.trim() || isAiResponding}
-          >
-            <Send className="h-4 w-4" />
-            <span className="sr-only">Send message</span>
-          </Button>
-        </form>
+              : awaitingDeckName
+                ? "Enter a name for your flashcard deck..."
+                : "Type a subject or upload a PDF file..."
+          }
+          minHeight={isFullPage ? "120px" : "80px"}
+        />
       </div>
     </div>
   )
