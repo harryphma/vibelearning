@@ -1,0 +1,5 @@
+fastapi
+dotenv
+pypdf
+google-generativeai
+passlib
