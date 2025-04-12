@@ -1,0 +1,99 @@
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 13%;
+
+    --card: 0 0% 96%;
+    --card-foreground: 0 0% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 13%;
+
+    --primary: 231 44% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 187 100% 42%;
+    --secondary-foreground: 0 0% 13%;
+
+    --muted: 200 15% 73%;
+    --muted-foreground: 200 19% 40%;
+
+    --accent: 14 100% 63%;
+    --accent-foreground: 0 0% 13%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 15% 73%;
+    --input: 200 15% 73%;
+    --ring: 231 44% 48%;
+
+    --radius: 0.5rem;
+
+    --success: 120 29% 74%;
+    --warning: 54 100% 62%;
+  }
+
+  .dark {
+    --background: 0 0% 13%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 20%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 231 44% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 187 100% 42%;
+    --secondary-foreground: 0 0% 13%;
+
+    --muted: 200 15% 40%;
+    --muted-foreground: 200 15% 73%;
+
+    --accent: 14 100% 63%;
+    --accent-foreground: 0 0% 13%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 15% 40%;
+    --input: 200 15% 40%;
+    --ring: 231 44% 48%;
+
+    --success: 120 29% 50%;
+    --warning: 54 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}
