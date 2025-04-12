@@ -1,11 +1,15 @@
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from utils import generate_cards, parsePDF_to_text
+from app.utils import generate_cards, parsePDF_to_text
+from app.routers.tts import router as tts_router
 import tempfile
 import os
 
 
 app = FastAPI()
+
+# Include routers
+app.include_router(tts_router, prefix="/api")
 
 @app.get("/")
 def root():
@@ -41,6 +45,7 @@ async def generate_flashcards(file: UploadFile):
         if 'temp_file_path' in locals():
             os.unlink(temp_file_path)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 app.add_middleware(
     CORSMiddleware,
