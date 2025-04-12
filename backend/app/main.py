@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers.tts import router as tts_router
+from app.app.routers.tts import router as tts_router
 from app.routers.gemini import router as gemini_router
 from starlette.middleware.sessions import SessionMiddleware
 import secrets
