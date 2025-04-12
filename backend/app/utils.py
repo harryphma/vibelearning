@@ -11,7 +11,7 @@ class Card(typing.TypedDict):
     answer: str
 
 load_dotenv()
-api_key = os.getenv("API_KEY")
+api_key = os.getenv("TTS_API_KEY")
 
 def parsePDF_to_text(file_name):
     #take an input pdf, convert to text
@@ -36,8 +36,8 @@ def generate_cards(text):
     )
     
     prompt = f"""
-    You are a JSON generator. Your task is to create exactly 5 flashcards from the given text.
-    You must respond with ONLY a JSON array containing exactly 5 objects.
+    You are a JSON generator. Your task is to create exactly 10 flashcards from the given text.
+    You must respond with ONLY a JSON array containing exactly 10 objects.
     
     Each object in the array must have exactly these two fields:
     - "question": A clear, concise question about the text
@@ -53,7 +53,7 @@ def generate_cards(text):
     1. Respond with ONLY the JSON array - no other text, no explanations
     2. The response must start with [ and end with ]
     3. Use double quotes for all strings
-    4. Include exactly 5 flashcards
+    4. Include exactly 10 flashcards
     5. Each flashcard must be unique
     
     Text to process:
@@ -99,8 +99,8 @@ def generate_cards(text):
                 formatted_flashcards.append({"question": question, "answer": answer})
         
         # Ensure we have exactly 5 cards
-        if len(formatted_flashcards) != 5:
-            raise ValueError(f"Expected 5 cards, got {len(formatted_flashcards)}")
+        if len(formatted_flashcards) != 10:
+            raise ValueError(f"Expected 10 cards, got {len(formatted_flashcards)}")
             
         return formatted_flashcards
         
@@ -114,6 +114,6 @@ def generate_cards(text):
         return []
 
 
-text = parsePDF_to_text("tech.pdf")
-cards = generate_cards(text)
-print(json.dumps(cards, indent=2))
+# text = parsePDF_to_text("tech.pdf")
+# cards = generate_cards(text)
+# print(json.dumps(cards, indent=2))
