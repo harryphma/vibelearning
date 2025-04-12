@@ -5,42 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
+import { FlashcardData } from "@/data/mock-flashcards"
 
-type Flashcard = {
-  id: string
-  question: string
-  answer: string
+interface FlashcardViewerProps {
+  cards: FlashcardData[];
+  title?: string;
 }
 
-export function FlashcardViewer() {
+export function FlashcardViewer({ cards = [], title }: FlashcardViewerProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isFlipping, setIsFlipping] = useState(false)
 
-  // Sample flashcards
-  const flashcards: Flashcard[] = [
-    {
-      id: "card1",
-      question: "What is photosynthesis?",
-      answer:
-        "Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize nutrients from carbon dioxide and water. Photosynthesis in plants generally involves the green pigment chlorophyll and generates oxygen as a by-product.",
-    },
-    {
-      id: "card2",
-      question: "What are the main components needed for photosynthesis?",
-      answer: "Sunlight, water, carbon dioxide, and chlorophyll.",
-    },
-    {
-      id: "card3",
-      question: "What is the chemical equation for photosynthesis?",
-      answer: "6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂",
-    },
-  ]
-
-  const currentCard = flashcards[currentCardIndex]
+  // Add safety check before accessing cards array
+  const currentCard = cards && cards.length > 0 ? cards[currentCardIndex] : null;
 
   const handleFlip = () => {
-    if (!isFlipping) {
+    if (!isFlipping && cards.length > 0) {
       setIsFlipping(true)
       setTimeout(() => {
         setIsFlipped(!isFlipped)
@@ -57,14 +38,28 @@ export function FlashcardViewer() {
   }
 
   const handleNext = () => {
-    if (currentCardIndex < flashcards.length - 1) {
+    if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1)
       setIsFlipped(false)
     }
   }
 
+  if (!cards || cards.length === 0) {
+    return (
+      <div className="w-full max-w-2xl flex flex-col items-center justify-center p-8">
+        <p className="text-muted-foreground text-center">
+          No flashcards available in this deck. Create some flashcards to get started!
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-2xl flex flex-col items-center">
+      {title && (
+        <h2 className="text-xl font-bold mb-4">{title}</h2>
+      )}
+      
       <div
         className={cn("w-full aspect-[3/2] perspective-1000 cursor-pointer", isFlipping && "animate-flip")}
         onClick={handleFlip}
@@ -82,7 +77,7 @@ export function FlashcardViewer() {
             )}
           >
             <h3 className="text-2xl font-bold mb-4">Question</h3>
-            <p className="text-xl">{currentCard.question}</p>
+            <p className="text-xl">{currentCard?.question}</p>
           </div>
           <div
             className={cn(
@@ -91,7 +86,7 @@ export function FlashcardViewer() {
             )}
           >
             <h3 className="text-2xl font-bold mb-4">Answer</h3>
-            <p className="text-lg">{currentCard.answer}</p>
+            <p className="text-lg">{currentCard?.answer}</p>
           </div>
         </Card>
       </div>
@@ -104,7 +99,7 @@ export function FlashcardViewer() {
 
         <div className="text-center">
           <div className="text-sm text-muted-foreground">
-            Card {currentCardIndex + 1} of {flashcards.length}
+            Card {currentCardIndex + 1} of {cards.length}
           </div>
           <Button variant="ghost" size="sm" className="mt-2" onClick={() => setIsFlipped(false)}>
             <RotateCcw className="h-3 w-3 mr-2" />
@@ -116,7 +111,7 @@ export function FlashcardViewer() {
           variant="outline"
           size="icon"
           onClick={handleNext}
-          disabled={currentCardIndex === flashcards.length - 1}
+          disabled={currentCardIndex === cards.length - 1}
         >
           <ChevronRight className="h-4 w-4" />
           <span className="sr-only">Next card</span>
