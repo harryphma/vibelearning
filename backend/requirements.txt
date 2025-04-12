@@ -3,7 +3,8 @@ dotenv
 pypdf
 google-generativeai
 passlib
-uvicorn
+uvicorn 
 fastapi
 PyPDF2
+gtts
 python-multipart
