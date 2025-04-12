@@ -26,7 +26,7 @@ interface FlashcardChatProps {
 }
 
 // API URL - default to localhost if not provided in env
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL ="http://localhost:8000/api";
 
 export function FlashcardChat({ 
   onNewDeckCreated,
@@ -116,9 +116,9 @@ export function FlashcardChat({
         let finalCards = pendingFileCards;
         
         // If we have pending subject but no cards (text-only flow),
-        // create some sample flashcards for this subject
+        // create some sample flashcards for this subject if API call failed earlier
         if (!finalCards && pendingSubject) {
-          // This would be replaced by API call in production
+          // Fallback cards if API call failed
           finalCards = [
             {
               id: `card-${Date.now()}-1`,
@@ -167,7 +167,7 @@ export function FlashcardChat({
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch(`${API_URL}/generate`, {
+        const response = await fetch(`${API_URL}/gemini/auto`, {
           method: 'POST',
           body: formData,
         });
@@ -176,10 +176,25 @@ export function FlashcardChat({
           throw new Error(`API error: ${response.status}`);
         }
 
-        const cards = await response.json();
+        const result = await response.json();
+        // Extract cards from the response - handle both formats
+        const cards = result.flashcards || result;
+        
+        console.log("File upload response:", result);
+        
+        if (!cards || !Array.isArray(cards)) {
+          throw new Error("Invalid response format from server");
+        }
+        
+        // Process cards to ensure they match FlashcardData format
+        const processedCards = cards.map((card: any, index: number) => ({
+          id: card.id || `card-${Date.now()}-${index}`,
+          question: card.question || "Question not available",
+          answer: card.answer || "Answer not available"
+        }));
         
         // Store the generated cards and ask for deck name
-        setPendingFileCards(cards);
+        setPendingFileCards(processedCards);
         setAwaitingDeckName(true);
         
         // Remove loading message and add response asking for deck name
@@ -187,7 +202,7 @@ export function FlashcardChat({
           const filteredMessages = prev.filter(msg => !msg.isLoading);
           return [...filteredMessages, {
             id: `ai-${Date.now()}`,
-            content: `Great! I've processed your file and created ${cards.length} flashcards. What would you like to name this deck?`,
+            content: `Great! I've processed your file and created ${processedCards.length} flashcards. What would you like to name this deck?`,
             sender: "ai",
             timestamp: new Date(),
           }];
@@ -219,22 +234,67 @@ export function FlashcardChat({
         });
       } 
       else {
-        // Regular text input for creating a new deck - ask for name first
+        // Regular text input for creating a new deck using /manual endpoint
         setAwaitingDeckName(true);
         setPendingSubject(message.trim());
         
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+          // Using FormData instead of JSON since the backend expects this format
+          const formData = new FormData();
+          formData.append('subject', message.trim());
+          
+          const response = await fetch(`${API_URL}/gemini/manual`, {
+            method: 'POST',
+            body: formData,
+          });
 
-        setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
-          return [...filteredMessages, {
-            id: `ai-${Date.now()}`,
-            content: `I can create flashcards about "${message}". What would you like to name this deck?`,
-            sender: "ai",
-            timestamp: new Date(),
-          }];
-        });
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+
+          // Get generated cards from the API
+          const result = await response.json();
+          // Extract cards from the response - handle both formats
+          const cards = result.flashcards || result;
+          
+          console.log("Text input response:", result);
+          
+          if (!cards || !Array.isArray(cards)) {
+            throw new Error("Invalid response format from server");
+          }
+          
+          // Process cards to ensure they match FlashcardData format
+          const processedCards = cards.map((card: any, index: number) => ({
+            id: card.id || `card-${Date.now()}-${index}`,
+            question: card.question || "Question not available",
+            answer: card.answer || "Answer not available"
+          }));
+          
+          setPendingFileCards(processedCards);
+          
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: `I can create ${processedCards.length} flashcards about "${message}". What would you like to name this deck?`,
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        } catch (error) {
+          console.error("Error generating cards:", error);
+          
+          // Even if API fails, still ask for name and use fallback cards later
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: `I can create flashcards about "${message}". What would you like to name this deck?`,
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        }
       }
     } catch (error) {
       console.error("Error processing message:", error);
