@@ -1,100 +1,103 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Navigation } from "@/components/navigation"
-import { ChatInput } from "@/components/chat-input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { BookOpen, Brain, Lightbulb } from "lucide-react"
-import { TTSTest } from "@/components/tts-test"
-import { useRouter } from "next/navigation"
-import { useFlashcardStore } from "@/store/flashcard-store"
-import Image from "next/image"
+import { useState } from 'react';
+
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
+import { useFlashcardStore } from '@/store/flashcard-store';
+import { BookOpen, Brain, Lightbulb } from 'lucide-react';
+
+import { ChatInput } from '@/components/chat-input';
+import { Navigation } from '@/components/navigation';
+import { TTSTest } from '@/components/tts-test';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function HomePage() {
-  const router = useRouter()
-  const { generateFlashcardDeck, generateFlashcardsFromPDF } = useFlashcardStore()
-  const [isProcessing, setIsProcessing] = useState(false)
+  const router = useRouter();
+  const { generateFlashcardDeck, generateFlashcardsFromPDF } = useFlashcardStore();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const examplePrompts = [
     {
-      title: "Create flashcards about photosynthesis",
-      prompt: "photosynthesis",
-      icon: <Lightbulb className="h-5 w-5 text-primary" />,
+      title: 'Create flashcards about photosynthesis',
+      prompt: 'photosynthesis',
+      icon: <Lightbulb className="text-primary h-5 w-5" />,
     },
     {
-      title: "Generate a deck on Spanish verb conjugations",
-      prompt: "Spanish verb conjugations",
-      icon: <Lightbulb className="h-5 w-5 text-primary" />,
+      title: 'Generate a deck on Spanish verb conjugations',
+      prompt: 'Spanish verb conjugations',
+      icon: <Lightbulb className="text-primary h-5 w-5" />,
     },
     {
-      title: "Make flashcards for JavaScript fundamentals",
-      prompt: "JavaScript fundamentals",
-      icon: <Lightbulb className="h-5 w-5 text-primary" />,
+      title: 'Make flashcards for JavaScript fundamentals',
+      prompt: 'JavaScript fundamentals',
+      icon: <Lightbulb className="text-primary h-5 w-5" />,
     },
-  ]
+  ];
 
   const handlePromptClick = async (prompt: string) => {
-    await handleChatInput(prompt)
-  }
+    await handleChatInput(prompt);
+  };
 
   const handleChatInput = async (message: string, file: File | null = null) => {
-    setIsProcessing(true)
-    
+    setIsProcessing(true);
+
     try {
       let deckId: string | null = null;
-      
+
       if (file) {
         // Handle PDF file upload
-        deckId = await generateFlashcardsFromPDF(file)
+        deckId = await generateFlashcardsFromPDF(file);
       } else if (message.trim()) {
         // Handle text-based flashcard generation
-        deckId = await generateFlashcardDeck(message)
+        deckId = await generateFlashcardDeck(message);
       }
-      
+
       if (deckId) {
         // Navigate to flashcards page after creation
-        router.push("/flashcards")
+        router.push('/flashcards');
       }
     } catch (error) {
-      console.error("Error generating flashcards:", error)
+      console.error('Error generating flashcards:', error);
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
       <Navigation />
-      <main className="flex-1 flex flex-col">
-        <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
-          <div className="max-w-3xl w-full text-center space-y-4">
+      <main className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center p-4 md:p-8">
+          <div className="w-full max-w-3xl space-y-4 text-center">
             {/* Added CogniFlow logo */}
-            <div className="flex justify-center mb-6">
-              <div className="relative w-40 h-40">
-                <Image 
-                  src="/logo.png" 
-                  alt="CogniFlow Logo" 
+            <div className="mb-6 flex justify-center">
+              <div className="relative h-40 w-40">
+                <Image
+                  src="/logo.png"
+                  alt="CogniFlow Logo"
                   fill
-                  style={{ objectFit: "contain" }}
+                  style={{ objectFit: 'contain' }}
                   priority
                 />
               </div>
             </div>
             <h1 className="text-4xl font-bold tracking-tight">Welcome to CogniFlow</h1>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-muted-foreground text-xl">
               Create flashcards, study, and teach concepts back to improve your learning.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 w-full max-w-3xl">
+          <div className="mt-12 grid w-full max-w-3xl grid-cols-1 gap-4 md:grid-cols-3">
             {examplePrompts.map((prompt, index) => (
-              <Card 
-                key={index} 
-                className="cursor-pointer hover:border-primary transition-colors"
+              <Card
+                key={index}
+                className="hover:border-primary cursor-pointer transition-colors"
                 onClick={() => handlePromptClick(prompt.prompt)}
               >
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="flex items-center gap-3 p-4">
                   {prompt.icon}
                   <p className="text-sm">{prompt.title}</p>
                 </CardContent>
@@ -102,8 +105,8 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
-            <Button size="lg" className="h-24 text-lg" onClick={() => router.push("/flashcards")}>
+          <div className="mt-12 grid w-full max-w-3xl grid-cols-1 gap-6 md:grid-cols-2">
+            <Button size="lg" className="h-24 text-lg" onClick={() => router.push('/flashcards')}>
               <BookOpen className="mr-2 h-5 w-5" />
               Create Flashcards
             </Button>
@@ -111,7 +114,7 @@ export default function HomePage() {
               size="lg"
               className="h-24 text-lg"
               variant="outline"
-              onClick={() => router.push("/teach")}
+              onClick={() => router.push('/teach')}
             >
               <Brain className="mr-2 h-5 w-5" />
               Teach Back
@@ -119,24 +122,24 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="sticky bottom-0 w-full border-t bg-background/80 backdrop-blur-sm">
+        <div className="bg-background/80 sticky bottom-0 w-full border-t backdrop-blur-sm">
           <div className="container max-w-3xl py-4">
-            <ChatInput 
-              onSendMessage={handleChatInput} 
+            <ChatInput
+              onSendMessage={handleChatInput}
               isDisabled={isProcessing}
               placeholder="Enter a subject to generate flashcards..."
               minHeight="80px"
             />
             {isProcessing && (
-              <div className="text-center mt-2 text-sm text-muted-foreground">
-                Creating flashcards... You'll be redirected when they're ready.
+              <div className="text-muted-foreground mt-2 text-center text-sm">
+                Creating flashcards... You will be redirected when they are ready.
               </div>
             )}
           </div>
         </div>
 
-      {/* <TTSTest /> */}
+        {/* <TTSTest /> */}
       </main>
     </div>
-  )
+  );
 }

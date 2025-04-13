@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 @config "../tailwind.config.js";
 @layer base {
   :root {
@@ -36,8 +36,6 @@
     --success: 150 86% 65%; /* #3DEA9A - Mint */
     --warning: 39 100% 70%; /* #FFCC33 - Yellow */
   }
-
-
 }
 
 @layer base {
@@ -59,16 +57,16 @@
     width: 8px;
     height: 8px;
   }
-  
+
   ::-webkit-scrollbar-track {
     background-color: transparent;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     background-color: #7c65ff30;
     border-radius: 20px;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     background-color: #7c65ff60;
   }
@@ -100,11 +98,11 @@
   .animate-pulse-dot1 {
     animation: pulse 1.5s infinite 0s;
   }
-  
+
   .animate-pulse-dot2 {
     animation: pulse 1.5s infinite 0.3s;
   }
-  
+
   .animate-pulse-dot3 {
     animation: pulse 1.5s infinite 0.6s;
   }
@@ -131,7 +129,8 @@
   }
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 0.4;
       transform: scale(0.8);
     }
@@ -163,10 +162,10 @@
 
   /* Gradient utilities */
   .bg-purple-gradient {
-    background-image: linear-gradient(to right, #7C65FF, #7661FF);
+    background-image: linear-gradient(to right, #7c65ff, #7661ff);
   }
 
   .bg-card-gradient {
-    background-image: linear-gradient(to right, #FFFFFF, #F5F4FF);
+    background-image: linear-gradient(to right, #ffffff, #f5f4ff);
   }
 }

@@ -151,6 +151,7 @@ async def evaluate_response(
     """
     Evaluate the quality of the chat history
     """
+
     return evaluate(chat_history_json)
 
 

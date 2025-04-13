@@ -9,5 +9,5 @@ PyPDF2
 gtts
 itsdangerous
 python-multipart
-
+openai
 google-cloud-speech
