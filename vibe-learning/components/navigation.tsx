@@ -41,7 +41,7 @@ export function Navigation() {
       <div className="flex h-16 items-center px-4 md:px-6">
         <div className="flex items-center gap-2">
           <BookOpen className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Vibe Learning</span>
+          <span className="text-xl font-bold">CogniFlow</span>
         </div>
         <nav className="ml-auto flex items-center gap-4 md:gap-6">
           <div className="hidden md:flex items-center gap-6">
@@ -59,30 +59,7 @@ export function Navigation() {
               </Link>
             ))}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+         
         </nav>
       </div>
     </header>

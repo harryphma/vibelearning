@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Vibe Learning - Interactive Flashcards",
+  title: "CogniFlow - Interactive Flashcards",
   description: "Learn and teach with AI-powered flashcards",
 }
 
