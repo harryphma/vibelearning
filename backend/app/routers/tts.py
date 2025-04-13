@@ -1,14 +1,15 @@
-from fastapi import APIRouter, HTTPException, Body, UploadFile, File
+from fastapi import APIRouter, HTTPException, Body, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
-from typing import Optional
+from typing import Optional, List, Dict
 import os
 import logging
 import traceback
 import sys
+import json
 from pydantic import BaseModel
 
 # Import utility functions
-from app.routers.utils.tts_utils import generate_speech_from_text, transcribe_speech_from_audio
+from app.routers.utils.tts_utils import generate_speech_from_text, transcribe_speech_from_audio, llm_learner_response
 
 # Set up logger
 logger = logging.getLogger("tts_router")
@@ -75,6 +76,71 @@ async def transcribe_speech(
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=error_msg)
 
+
+
+@router.post("/generate_llm_response")
+async def generate_llm_response(
+    audio_file: UploadFile = File(...),
+    chat_history_json: str = Form(...),  # JSON string representation of List[Dict[str, str]]
+    language_code: str = Form("en-US")
+):
+    """
+    Process audio speech and chat history to generate LLM text response
+    
+    1. Takes audio input and converts to text using speech-to-text
+    2. Appends the text to chat history as user message
+    3. Gets LLM response as a learner
+    4. Returns the LLM text response directly (not as audio)
+    """
+    try:
+        logger.debug(f"Received audio file: {audio_file.filename}, content_type: {audio_file.content_type}")
+
+        
+        # Parse the JSON string into a list of message dictionaries
+        chat_history = json.loads(chat_history_json)
+        
+        # Validate that chat_history is an array
+        if not isinstance(chat_history, list):
+            raise HTTPException(status_code=400, detail="chat_history_json must be a JSON array of message objects")
+        
+        # Convert speech to text
+        audio_content = await audio_file.read()
+        transcriptions = await transcribe_speech_from_audio(
+            audio_content=audio_content,
+            language_code=language_code
+        )
+        
+        if not transcriptions:
+            raise HTTPException(status_code=400, detail="Could not transcribe audio, please try again")
+        
+        # Get the best transcription (highest confidence)
+        full_transcription = " ".join([t["transcript"] for t in transcriptions])
+        
+        # Add user message to chat history using full transcription
+        chat_history.append({
+            "role": "user",
+            "content": full_transcription
+        })
+        
+        # Get LLM response
+        llm_response = llm_learner_response(chat_history)
+        
+        # Return the LLM text response and updated chat history
+        return {
+            "response": llm_response, 
+            "transcribed_text": full_transcription,
+        }
+            
+    except json.JSONDecodeError:
+        error_msg = "Invalid JSON format for chat_history_json"
+        logger.error(error_msg)
+        raise HTTPException(status_code=400, detail=error_msg)
+    except Exception as e:
+        error_msg = f"Error in generate_llm_response: {str(e)}"
+        logger.error(error_msg)
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=error_msg)
+
 async def generate_speech(text: str, language: str):
     """
     Common function to generate speech
@@ -100,4 +166,3 @@ async def generate_speech(text: str, language: str):
         raise HTTPException(status_code=500, detail=str(e)) 
 
 
-    

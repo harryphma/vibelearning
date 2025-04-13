@@ -117,7 +117,7 @@ async def transcribe_speech_from_audio(
             
             try:
                 response = client.recognize(config=config, audio=audio)
-                logger.debug(f"Received response from Google: {response}")
+                # logger.debug(f"Received response from Google: {response}")
             except Exception as speech_error:
                 # Try to convert to a standard WAV format using ffmpeg if available
                 logger.warning(f"First transcription attempt failed: {str(speech_error)}")
@@ -152,7 +152,7 @@ async def transcribe_speech_from_audio(
                     )
                     
                     response = client.recognize(config=config, audio=audio)
-                    logger.debug(f"Received response from Google after conversion: {response}")
+                    # logger.debug(f"Received response from Google after conversion: {response}")
                     
                     # Clean up the converted file
                     os.unlink(converted_file)
@@ -190,19 +190,82 @@ async def transcribe_speech_from_audio(
 
 
 
-def llm_learner_response(text: str) -> str:
+def llm_learner_response(chat_history: List[Dict[str, str]]) -> str:
     """
-    Generate a response from the LLM learner
+    Generate a response from the LLM based on the chat history.
+    
+    Args:
+        chat_history: A list of message dictionaries with the following format:
+        {
+            "role": "user" | "assistant" | "system",
+            "content": str
+        }
+        
+    Returns:
+        A string containing the LLM's response
     """
+    # Load API key from environment
+    load_dotenv()
+    api_key = os.getenv("API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY environment variable is not set")
+    
     genai.configure(api_key=api_key)
 
-    # Define the model and prompt
+    # Load the system prompt from prompt.txt
+    try:
+        prompt_file_path = os.path.join(os.path.dirname(__file__), "prompt.txt")
+        with open(prompt_file_path, "r") as file:
+            system_prompt = file.read()
+    except Exception as e:
+        logger.error(f"Error reading prompt file: {str(e)}")
+        raise Exception(f"Failed to read prompt file: {str(e)}")
+
+
+    # Convert to the format Gemini expects
+    formatted_messages = []
+    
+    # Add system prompt as a user message (Gemini doesn't have a system role)
+    formatted_messages.append({
+        "role": "user",
+        "parts": [{"text": system_prompt}]
+    })
+    
+    # Map the standard role names to Gemini's expected roles
+    # "assistant" → "model", "user" → "user"
+    for message in chat_history:
+        role = message.get("role", "")
+        content = message.get("content", "")
+        
+        # Skip system messages as we've already added the primary system prompt
+        if role == "system":
+            continue
+            
+        # Convert to the format Gemini expects
+        gemini_role = "model" if role == "assistant" else "user"
+        formatted_messages.append({
+            "role": gemini_role,
+            "parts": [{"text": content}]
+        })
+    
+    # Define the model and generation config
     model = genai.GenerativeModel(
         'gemini-2.0-flash',  
         generation_config={
-            "temperature": 0.1,
-            "top_p": 0.8,
+            "temperature": 0.7,  # Slightly higher temperature for more conversational responses
+            "top_p": 0.85,
             "top_k": 40,
+            "max_output_tokens": 800,
         }
     )
+    
+    try:
+        # Generate response from Gemini
+        # logger.debug(f"Sending formatted messages to Gemini: {formatted_messages}")
+        response = model.generate_content(formatted_messages)
+        return response.text
+    except Exception as e:
+        logger.error(f"Error generating LLM response: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise Exception(f"Failed to generate LLM response: {str(e)}")
 

@@ -1,0 +1,131 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
+import { Send } from "lucide-react"
+
+type Message = {
+  id: string
+  content: string
+  sender: "user" | "ai"
+  isLoading?: boolean
+}
+
+export function TeachingChat() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "welcome",
+      content: "Welcome to the teaching interface! Explain concepts as if you're teaching someone, and I'll provide feedback on your explanations.",
+      sender: "ai",
+    },
+  ])
+  const [input, setInput] = useState("")
+  const [isAiResponding, setIsAiResponding] = useState(false)
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim() || isAiResponding) return
+
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      content: input,
+      sender: "user",
+    }
+
+    const loadingMessage: Message = {
+      id: `ai-loading-${Date.now()}`,
+      content: "Thinking...",
+      sender: "ai",
+      isLoading: true,
+    }
+
+    setMessages([...messages, userMessage, loadingMessage])
+    setInput("")
+    setIsAiResponding(true)
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiResponse = "I noticed you're explaining this concept clearly. Great job! You might want to consider adding a few more examples to illustrate the practical applications of this idea."
+      
+      // Remove loading message and add real response
+      setMessages(prev => {
+        const filteredMessages = prev.filter(msg => !msg.isLoading)
+        return [...filteredMessages, {
+          id: `ai-${Date.now()}`,
+          content: aiResponse,
+          sender: "ai",
+        }]
+      })
+      
+      setIsAiResponding(false)
+    }, 1500)
+  }
+
+  return (
+    <div className="flex flex-col h-[85vh] border rounded-lg overflow-hidden">
+      <div className="p-4 border-b bg-card">
+        <h2 className="font-semibold">Teaching Conversation</h2>
+        <p className="text-sm text-muted-foreground">
+          Explain concepts clearly and get feedback on your teaching
+        </p>
+      </div>
+
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <div key={message.id} className={cn("flex", message.sender === "user" ? "justify-end" : "justify-start")}>
+              <div
+                className={cn(
+                  "max-w-[80%] rounded-lg p-3",
+                  message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
+                )}
+              >
+                {message.isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
+                  </div>
+                ) : (
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+
+      <div className="p-4 border-t bg-card mt-auto">
+        <form onSubmit={handleSendMessage} className="relative">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Explain a concept or ask for feedback..."
+            className="resize-none pr-12 min-h-[80px]"
+            disabled={isAiResponding}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                handleSendMessage(e)
+              }
+            }}
+          />
+          <Button 
+            type="submit" 
+            size="icon" 
+            className="absolute bottom-2 right-2 rounded-full" 
+            disabled={!input.trim() || isAiResponding}
+          >
+            <Send className="h-4 w-4" />
+            <span className="sr-only">Send message</span>
+          </Button>
+        </form>
+      </div>
+    </div>
+  )
+} 

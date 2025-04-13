@@ -102,7 +102,6 @@ export function TranscriptView() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop()
       
-      // Stop all audio tracks
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
       
       setIsRecording(false)
@@ -123,7 +122,6 @@ export function TranscriptView() {
       const formData = new FormData()
       formData.append('audio_file', audioBlob, 'recording.wav')
       
-      console.log("Sending request to:", `${process.env.NEXT_PUBLIC_API_URL}/tts/transcribe`);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tts/transcribe`, {
         method: 'POST',
         body: formData,
