@@ -8,22 +8,45 @@ import { Camera, CameraOff, Download, Mic, MicOff, Send } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CameraView } from '@/components/camera-view';
 
 interface WebcamViewProps {
   onAudioRecorded?: (audioBlob: Blob, chatHistory: string[]) => Promise<void>;
+  className?: string;
 }
 
-export function WebcamView({ onAudioRecorded }: WebcamViewProps) {
+export function WebcamView({ onAudioRecorded, className }: WebcamViewProps) {
   const [cameraActive, setCameraActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingReady, setRecordingReady] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [positionBottomLeft, setPositionBottomLeft] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioBlobRef = useRef<Blob | null>(null);
   const activeTeachingDeck = useFlashcardStore(state => state.activeTeachingDeck);
+
+  // When camera is activated, first show it in the card, then after a delay move it to bottom left
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cameraActive) {
+      // Start with camera in the card
+      setPositionBottomLeft(false);
+      
+      // After a delay, move it to bottom left
+      timer = setTimeout(() => {
+        setPositionBottomLeft(true);
+      }, 2000); // 2 second delay before moving camera
+    } else {
+      setPositionBottomLeft(false);
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [cameraActive]);
 
   const toggleCamera = () => {
     setCameraActive(prev => {
@@ -387,7 +410,7 @@ export function WebcamView({ onAudioRecorded }: WebcamViewProps) {
   }, []); // Empty dependency array means this only runs on unmount
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-hidden ${className}`}>
       <CardHeader className="p-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Webcam Recorder</CardTitle>
@@ -452,64 +475,20 @@ export function WebcamView({ onAudioRecorded }: WebcamViewProps) {
                     </>
                   )}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={downloadRecording}
-                  disabled={isSending}
-                  title="Download recording for debugging"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
               </>
             )}
           </div>
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        <div className="bg-muted flex flex-col items-center justify-center rounded-md p-2">
-          {cameraActive ? (
-            <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="h-full w-full object-cover"
-              />
-              {isRecording && (
-                <div className="absolute top-2 right-2 flex items-center gap-2 rounded-md bg-red-500 px-2 py-1 text-xs text-white">
-                  <div className="h-2 w-2 animate-pulse rounded-full bg-white" />
-                  Recording
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="py-8">
-              {isRecording ? (
-                <div className="flex flex-col items-center">
-                  <Mic className="h-12 w-12 animate-pulse text-red-500" />
-                  <div className="mt-2 text-sm">Recording audio...</div>
-                </div>
-              ) : recordingReady ? (
-                <div className="flex flex-col items-center">
-                  <div className="rounded-md bg-green-100 px-3 py-2 text-green-800">
-                    Recording ready to send
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <Camera className="text-muted-foreground h-12 w-12 opacity-20" />
-                  <div className="text-muted-foreground mt-2 text-sm">
-                    {!activeTeachingDeck
-                      ? 'Select a teaching deck to enable recording'
-                      : 'Click the camera button to start video'}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <CameraView
+          isActive={cameraActive}
+          isRecording={isRecording}
+          recordingReady={recordingReady}
+          videoRef={videoRef}
+          positionBottomLeft={positionBottomLeft}
+          activeTeachingDeck={activeTeachingDeck}
+        />
       </CardContent>
     </Card>
   );

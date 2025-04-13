@@ -80,7 +80,7 @@ export default function TeachPage() {
     <div className="flex min-h-screen flex-col">
       <Navigation />
       <main className="grid h-[calc(100vh-64px)] flex-1 grid-cols-1 gap-4 p-4 pb-6 md:grid-cols-12">
-        <div className="flex h-full max-h-[calc(100vh-100px)] flex-col space-y-4 md:col-span-4">
+        <div className="flex max-h-[calc(100vh-100px)] flex-col space-y-4 md:col-span-4">
           <WebcamView onAudioRecorded={handleAudioRecorded} className="flex-1" />
           <TeachingFlashcard className="flex-1" />
         </div>

@@ -78,10 +78,10 @@ export function TeachingFlashcard() {
     >
       <CardHeader className="border-b border-indigo-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg text-indigo-900">
+          <CardTitle className="flex items-center gap-2 text-sm text-indigo-900">
             <Lightbulb className="h-4 w-4 text-purple-500" />
             {activeTeachingDeck ? (
-              <span className="max-w-[150px] truncate" title={activeTeachingDeck.title}>
+              <span className="max-w-[180px]" title={activeTeachingDeck.title}>
                 {activeTeachingDeck.title}
               </span>
             ) : (
@@ -159,7 +159,7 @@ export function TeachingFlashcard() {
                   <h3 className="mb-4 text-center text-xl font-semibold text-indigo-800">
                     Question
                   </h3>
-                  <p className="flex-grow overflow-auto text-center text-lg">
+                  <p className="flex-grow overflow-auto text-center text-md">
                     {currentCard.question}
                   </p>
                   <div className="mt-4 text-right opacity-70">
