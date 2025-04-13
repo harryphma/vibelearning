@@ -10,7 +10,6 @@ import { BookOpen, Brain, Lightbulb } from 'lucide-react';
 
 import { ChatInput } from '@/components/chat-input';
 import { Navigation } from '@/components/navigation';
-import { TTSTest } from '@/components/tts-test';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -23,17 +22,17 @@ export default function HomePage() {
     {
       title: 'Create flashcards about photosynthesis',
       prompt: 'photosynthesis',
-      icon: <Lightbulb className="text-primary h-5 w-5" />,
+      icon: <Lightbulb className="text-primary h-4 w-4" />,
     },
     {
       title: 'Generate a deck on Spanish verb conjugations',
       prompt: 'Spanish verb conjugations',
-      icon: <Lightbulb className="text-primary h-5 w-5" />,
+      icon: <Lightbulb className="text-primary h-4 w-4" />,
     },
     {
       title: 'Make flashcards for JavaScript fundamentals',
       prompt: 'JavaScript fundamentals',
-      icon: <Lightbulb className="text-primary h-5 w-5" />,
+      icon: <Lightbulb className="text-primary h-4 w-4" />,
     },
   ];
 
@@ -67,14 +66,14 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Navigation />
-      <main className="flex flex-1 flex-col">
-        <div className="flex flex-1 flex-col items-center justify-center p-4 md:p-8">
-          <div className="w-full max-w-3xl space-y-4 text-center">
+      <main className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col items-center justify-center p-3 md:p-6">
+          <div className="w-full max-w-2xl space-y-3 text-center">
             {/* Added CogniFlow logo */}
-            <div className="mb-6 flex justify-center">
-              <div className="relative h-40 w-40">
+            <div className="mb-4 flex justify-center">
+              <div className="relative h-28 w-28">
                 <Image
                   src="/logo.png"
                   alt="CogniFlow Logo"
@@ -84,54 +83,60 @@ export default function HomePage() {
                 />
               </div>
             </div>
-            <h1 className="text-4xl font-bold tracking-tight">Welcome to CogniFlow</h1>
-            <p className="text-muted-foreground text-xl">
+            <h1 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold tracking-tight text-transparent">Welcome to CogniFlow</h1>
+            <p className="text-muted-foreground text-sm">
               Create flashcards, study, and teach concepts back to improve your learning.
             </p>
           </div>
 
-          <div className="mt-12 grid w-full max-w-3xl grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="mt-6 grid w-full max-w-2xl grid-cols-1 gap-3 md:grid-cols-3">
             {examplePrompts.map((prompt, index) => (
               <Card
                 key={index}
-                className="hover:border-primary cursor-pointer transition-colors"
+                className="cursor-pointer border-transparent bg-white/70 transition-all hover:border-primary hover:shadow-md"
                 onClick={() => handlePromptClick(prompt.prompt)}
               >
-                <CardContent className="flex items-center gap-3 p-4">
-                  {prompt.icon}
-                  <p className="text-sm">{prompt.title}</p>
+                <CardContent className="flex items-center gap-2 p-3">
+                  <div className="rounded-full bg-gradient-to-r from-blue-100 to-purple-100 p-1">
+                    {prompt.icon}
+                  </div>
+                  <p className="text-xs">{prompt.title}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          <div className="mt-12 grid w-full max-w-3xl grid-cols-1 gap-6 md:grid-cols-2">
-            <Button size="lg" className="h-24 text-lg" onClick={() => router.push('/flashcards')}>
-              <BookOpen className="mr-2 h-5 w-5" />
+          <div className="mt-6 grid w-full max-w-2xl grid-cols-1 gap-4 md:grid-cols-2">
+            <Button 
+              size="sm" 
+              className="h-16 bg-gradient-to-r from-blue-600 to-indigo-600 text-sm hover:from-blue-700 hover:to-indigo-700" 
+              onClick={() => router.push('/flashcards')}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
               Create Flashcards
             </Button>
             <Button
-              size="lg"
-              className="h-24 text-lg"
+              size="sm"
+              className="h-16 border-transparent bg-gradient-to-r from-purple-50 to-indigo-50 text-sm text-purple-800 hover:from-purple-100 hover:to-indigo-100"
               variant="outline"
               onClick={() => router.push('/teach')}
             >
-              <Brain className="mr-2 h-5 w-5" />
+              <Brain className="mr-2 h-4 w-4" />
               Teach Back
             </Button>
           </div>
         </div>
 
-        <div className="bg-background/80 sticky bottom-0 w-full border-t backdrop-blur-sm">
-          <div className="container max-w-3xl py-4">
+        <div className="bg-white/80 sticky bottom-0 w-full border-t backdrop-blur-sm">
+          <div className="container max-w-2xl py-3">
             <ChatInput
               onSendMessage={handleChatInput}
               isDisabled={isProcessing}
               placeholder="Enter a subject to generate flashcards..."
-              minHeight="80px"
+              minHeight="60px"
             />
             {isProcessing && (
-              <div className="text-muted-foreground mt-2 text-center text-sm">
+              <div className="text-muted-foreground mt-1 text-center text-xs">
                 Creating flashcards... You will be redirected when they are ready.
               </div>
             )}

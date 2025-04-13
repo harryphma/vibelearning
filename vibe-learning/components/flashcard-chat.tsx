@@ -397,8 +397,8 @@ export function FlashcardChat({
           )}
       </div>
 
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4 pb-1">
+      <ScrollArea className="flex-1 p-4 overflow-y-auto max-h-[64vh]">
+        <div className="space-y-4 pb-1 ">
           {messages.map((message, index) => (
             <div
               key={message.id}

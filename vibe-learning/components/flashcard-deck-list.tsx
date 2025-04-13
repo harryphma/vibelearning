@@ -104,7 +104,7 @@ export function FlashcardDeckList({
                 )}
                 onClick={() => handleDeckClick(deck)}
               >
-                <div className="flex items-center truncate font-medium">
+                <div className="flex items-center truncate font-medium overflow-hidden text-sm">
                   <div
                     className={cn(
                       'mr-2 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md',

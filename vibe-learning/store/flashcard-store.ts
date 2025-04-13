@@ -114,7 +114,7 @@ export const useFlashcardStore = create<FlashcardState>()(
         );
 
         // If flashcards are updated, also update them in deckFlashcards
-        let updatedDeckFlashcards = { ...state.deckFlashcards };
+        const updatedDeckFlashcards = { ...state.deckFlashcards };
         if (updatedDeck.flashcards) {
           updatedDeckFlashcards[deckId] = updatedDeck.flashcards;
         }
@@ -258,10 +258,11 @@ export const useFlashcardStore = create<FlashcardState>()(
         const deckId = `deck-${Date.now()}`;
         const newDeck: FlashcardDeck = {
           id: deckId,
-          title: title || `Flashcards: ${subject}`,
+          title: title || `${subject}`,
           description: `Flashcards about ${subject}`,
           flashcards: cards,
           createdAt: new Date().toISOString(),
+          subject: subject,
         };
 
         get().addDeck(newDeck);
@@ -291,10 +292,11 @@ export const useFlashcardStore = create<FlashcardState>()(
         const deckId = `deck-${Date.now()}`;
         const newDeck: FlashcardDeck = {
           id: deckId,
-          title: title || `Flashcards: ${file.name.split('.')[0]}`,
+          title: title || `${file.name.split('.')[0]}`,
           description: `Flashcards generated from ${file.name}`,
           flashcards: cards,
           createdAt: new Date().toISOString(),
+          subject: file.name.split('.')[0],
         };
 
         get().addDeck(newDeck);
@@ -373,7 +375,7 @@ export const useFlashcardStore = create<FlashcardState>()(
       }
 
       // Fall back to the deck's flashcards if available
-      return activeTeachingDeck.flashcards || activeTeachingDeck.cards || [];
+      return activeTeachingDeck.flashcards || [];
     },
 
     // Helper methods
@@ -402,5 +404,5 @@ export const useFlashcardStore = create<FlashcardState>()(
     getDeck: deckId => {
       return get().decks.find(deck => deck.id === deckId) || null;
     },
-  }))
+  }), { name: 'flashcard-store' })
 );
