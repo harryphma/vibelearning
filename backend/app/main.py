@@ -1,12 +1,17 @@
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers.tts import router as tts_router
 from app.routers.gemini import router as gemini_router
-import tempfile
-import os
+from starlette.middleware.sessions import SessionMiddleware
+import secrets
 
 
 app = FastAPI()
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=secrets.token_urlsafe(32)  # Generate a random secret key
+)
 
 # Include routers
 app.include_router(tts_router, prefix="/api")
