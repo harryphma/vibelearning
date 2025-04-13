@@ -11,6 +11,7 @@ class Card(typing.TypedDict):
 
 load_dotenv()
 api_key = os.getenv("API_KEY")
+genai.configure(api_key=api_key)
 
 def parsePDF_to_text(file_name):
     #take an input pdf, convert to text
@@ -22,7 +23,6 @@ def parsePDF_to_text(file_name):
     return text
 
 def generate_cards(text):
-    genai.configure(api_key=api_key)
 
     # Define the model and prompt
     model = genai.GenerativeModel(
@@ -117,7 +117,6 @@ def topic_selection(subject):
     Returns:
         list: A list of flashcards with question and answer pairs
     """
-    genai.configure(api_key=api_key)
 
     # Define the model and prompt
     model = genai.GenerativeModel(
@@ -158,9 +157,6 @@ def topic_selection(subject):
         response = model.generate_content(prompt)
         response_text = response.text.strip()
         
-        # Debug: Print the raw response
-        print("Raw response from model:")
-        print(response_text)
         
         # Clean the response text
         response_text = response_text.replace('```json', '').replace('```', '').strip()
@@ -216,7 +212,6 @@ def edit_flashcards(flashcards, user_input):
     Returns:
         list: The updated list of flashcards
     """
-    genai.configure(api_key=api_key)
 
     # Define the model and prompt
     model = genai.GenerativeModel(
