@@ -7,6 +7,7 @@ import { WebcamView } from "@/components/webcam-view"
 import { TeachingFlashcard } from "@/components/teaching-flashcard"
 import { TeachingChat, TeachingChatHandle } from "@/components/teaching-chat"
 import { useFlashcardStore } from "@/store/flashcard-store"
+import { useEvaluationStore } from "@/store/evaluation-store"
 import { Button } from "@/components/ui/button"
 import { Award } from "lucide-react"
 import { evaluateChat } from "@/lib/api/flashcards"
@@ -15,6 +16,8 @@ export default function TeachPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [isEvaluating, setIsEvaluating] = useState(false)
   const activeTeachingDeck = useFlashcardStore((state) => state.activeTeachingDeck)
+  const setEvaluationResults = useEvaluationStore((state) => state.setEvaluationResults)
+  const setLoading = useEvaluationStore((state) => state.setLoading)
   const router = useRouter()
   
   // Create a proper ref for the TeachingChat component
@@ -42,6 +45,8 @@ export default function TeachPage() {
     if (!teachingChatRef.current || !activeTeachingDeck) return
     
     setIsEvaluating(true)
+    setLoading(true) // Set loading state in the store
+    
     try {
       // Get chat history from component
       const messages = teachingChatRef.current.getMessages();
@@ -55,8 +60,8 @@ export default function TeachPage() {
       // Call API to evaluate chat
       const evaluationResults = await evaluateChat(chatHistory);
       
-      // Store results in sessionStorage for the evaluation page
-      sessionStorage.setItem('evaluationResults', JSON.stringify(evaluationResults));
+      // Store results in the evaluation store
+      setEvaluationResults(evaluationResults);
       
       // Redirect to evaluation page
       router.push('/evaluate');
@@ -74,6 +79,10 @@ export default function TeachPage() {
         <div className="md:col-span-4 flex flex-col space-y-4">
           <WebcamView onAudioRecorded={handleAudioRecorded} />
           <TeachingFlashcard />
+         
+        </div>
+        <div className="md:col-span-8 flex flex-col h-full">
+          <TeachingChat ref={teachingChatRef} />
           <Button 
             onClick={handleEvaluate} 
             disabled={isEvaluating || !activeTeachingDeck}
@@ -83,9 +92,6 @@ export default function TeachPage() {
             <Award className="mr-2 h-4 w-4" />
             {isEvaluating ? "Evaluating..." : "Evaluate Teaching"}
           </Button>
-        </div>
-        <div className="md:col-span-8 flex flex-col h-full">
-          <TeachingChat ref={teachingChatRef} />
         </div>
       </main>
     </div>

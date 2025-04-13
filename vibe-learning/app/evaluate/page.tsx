@@ -6,38 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { BookOpen, Brain, Lightbulb, Award } from "lucide-react"
 import { motion } from "framer-motion"
-
-interface EvaluationScore {
-  knowledge_accuracy: number
-  explanation_quality: number
-  intuitiveness: number
-  overall_score: number
-}
+import { useEvaluationStore } from "@/store/evaluation-store"
 
 export default function EvaluatePage() {
-  const [scores, setScores] = useState<EvaluationScore | null>(null)
+  const { evaluationResults, isLoading } = useEvaluationStore()
   const [loading, setLoading] = useState(true)
+  const [scores, setScores] = useState(evaluationResults)
 
   useEffect(() => {
-    // Try to get evaluation results from sessionStorage
-    const storedResults = sessionStorage.getItem('evaluationResults')
-    
-    if (storedResults) {
-      try {
-        const parsedResults = JSON.parse(storedResults)
-        setScores(parsedResults)
-        setLoading(false)
-        // Clear from session storage after loading
-        sessionStorage.removeItem('evaluationResults')
-      } catch (error) {
-        console.error("Error parsing evaluation results:", error)
-        setDefaultScores()
-      }
+    if (evaluationResults) {
+      setScores(evaluationResults)
+      setLoading(false)
     } else {
-      // Fallback to default scores if no stored results
+      // Fallback to default scores if no evaluation results
       setDefaultScores()
     }
-  }, [])
+  }, [evaluationResults])
 
   // Helper function to set default scores for demo purposes
   const setDefaultScores = () => {
