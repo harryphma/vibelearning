@@ -234,71 +234,49 @@ export function FlashcardChat({
         });
       } 
       else {
-        // Regular text input for creating a new deck using /manual endpoint
-        setAwaitingDeckName(true);
-        setPendingSubject(message.trim());
-        
         try {
-          // Using FormData instead of JSON since the backend expects this format
-          const formData = new FormData();
-          formData.append('subject', message.trim());
-          
           const response = await fetch(`${API_URL}/gemini/manual`, {
             method: 'POST',
-            body: formData,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ subject: message.trim() }),
           });
-
           if (!response.ok) {
             throw new Error(`API error: ${response.status}`);
           }
 
-          // Get generated cards from the API
-          const result = await response.json();
-          // Extract cards from the response - handle both formats
-          const cards = result.flashcards || result;
-          
-          console.log("Text input response:", result);
-          
-          if (!cards || !Array.isArray(cards)) {
-            throw new Error("Invalid response format from server");
-          }
-          
-          // Process cards to ensure they match FlashcardData format
-          const processedCards = cards.map((card: any, index: number) => ({
-            id: card.id || `card-${Date.now()}-${index}`,
-            question: card.question || "Question not available",
-            answer: card.answer || "Answer not available"
-          }));
-          
-          setPendingFileCards(processedCards);
-          
+          const cards = await response.json();
+          setPendingFileCards(cards);
+          setAwaitingDeckName(true);
+          setPendingSubject(message.trim());
+
           setMessages(prev => {
             const filteredMessages = prev.filter(msg => !msg.isLoading);
             return [...filteredMessages, {
               id: `ai-${Date.now()}`,
-              content: `I can create ${processedCards.length} flashcards about "${message}". What would you like to name this deck?`,
+              content: `I can create ${cards.length} flashcards for the subject "${message}". What would you like to name this deck?`,
               sender: "ai",
               timestamp: new Date(),
             }];
           });
         } catch (error) {
-          console.error("Error generating cards:", error);
-          
-          // Even if API fails, still ask for name and use fallback cards later
+          console.error("Error fetching flashcards:", error);
           setMessages(prev => {
             const filteredMessages = prev.filter(msg => !msg.isLoading);
             return [...filteredMessages, {
               id: `ai-${Date.now()}`,
-              content: `I can create flashcards about "${message}". What would you like to name this deck?`,
+              content: "Sorry, there was an error processing your request. Please try again.",
               sender: "ai",
               timestamp: new Date(),
             }];
           });
+        } finally {
+          setIsAiResponding(false);
         }
       }
     } catch (error) {
-      console.error("Error processing message:", error);
-      
+      console.error("Error processing request:", error);
       setMessages(prev => {
         const filteredMessages = prev.filter(msg => !msg.isLoading);
         return [...filteredMessages, {
@@ -308,11 +286,6 @@ export function FlashcardChat({
           timestamp: new Date(),
         }];
       });
-      
-      // Reset states on error
-      setAwaitingDeckName(false);
-      setPendingFileCards(null);
-      setPendingSubject(null);
     } finally {
       setIsAiResponding(false);
     }
