@@ -2,12 +2,26 @@ import { create } from 'zustand';
 import { FlashcardData, FlashcardDeck } from '@/data/mock-flashcards';
 import { editFlashcards, generateFlashcards, generateFlashcardsFromPDF } from '@/lib/api/flashcards';
 
+// Define Message type for chat messages
+export type Message = {
+  id: string;
+  content: string;
+  sender: "user" | "ai";
+  timestamp: Date;
+  isLoading?: boolean;
+  hasFile?: boolean;
+  fileName?: string;
+}
+
 interface FlashcardState {
   decks: FlashcardDeck[];
   activeDeckId: string | null;
   isLoading: boolean;
   error: string | null;
   deckFlashcards: Record<string, FlashcardData[]>; // Track flashcards for each deck by ID
+  
+  // Track chat messages by deck ID
+  deckMessages: Record<string, Message[]>;
   
   // Actions
   setDecks: (decks: FlashcardDeck[]) => void;
@@ -24,6 +38,11 @@ interface FlashcardState {
   // New flashcard tracking actions
   setDeckFlashcards: (deckId: string, flashcards: FlashcardData[]) => void;
   getDeckFlashcards: (deckId: string) => FlashcardData[];
+  
+  // Chat message actions
+  getDeckMessages: (deckId: string) => Message[];
+  addMessageToDeck: (deckId: string, message: Message) => void;
+  setDeckMessages: (deckId: string, messages: Message[]) => void;
   
   // API-related actions
   generateFlashcardDeck: (subject: string, title?: string) => Promise<string | null>;
@@ -42,6 +61,7 @@ export const useFlashcardStore = create<FlashcardState>((set, get) => ({
   isLoading: false,
   error: null,
   deckFlashcards: {}, // Initialize empty record
+  deckMessages: {}, // Initialize empty record for chat messages
   
   // Actions
   setDecks: (decks) => set({ decks }),
@@ -53,9 +73,21 @@ export const useFlashcardStore = create<FlashcardState>((set, get) => ({
       [deck.id]: deck.flashcards 
     };
     
+    // Initialize empty messages array for this deck
+    const updatedDeckMessages = {
+      ...state.deckMessages,
+      [deck.id]: state.deckMessages[deck.id] || [{
+        id: `welcome-${deck.id}`,
+        content: `You're now editing "${deck.title}". What would you like to modify or add to this deck?`,
+        sender: "ai",
+        timestamp: new Date(),
+      }]
+    };
+    
     return { 
       decks: [...state.decks, deck],
-      deckFlashcards: updatedDeckFlashcards
+      deckFlashcards: updatedDeckFlashcards,
+      deckMessages: updatedDeckMessages
     };
   }),
   
@@ -77,13 +109,15 @@ export const useFlashcardStore = create<FlashcardState>((set, get) => ({
   }),
   
   removeDeck: (deckId) => set((state) => {
-    // Remove deck and its flashcards
+    // Remove deck and its flashcards and messages
     const { [deckId]: _, ...remainingDeckFlashcards } = state.deckFlashcards;
+    const { [deckId]: __, ...remainingDeckMessages } = state.deckMessages;
     
     return {
       decks: state.decks.filter((deck) => deck.id !== deckId),
       activeDeckId: state.activeDeckId === deckId ? null : state.activeDeckId,
-      deckFlashcards: remainingDeckFlashcards
+      deckFlashcards: remainingDeckFlashcards,
+      deckMessages: remainingDeckMessages
     };
   }),
   
@@ -100,6 +134,28 @@ export const useFlashcardStore = create<FlashcardState>((set, get) => ({
   getDeckFlashcards: (deckId) => {
     return get().deckFlashcards[deckId] || [];
   },
+  
+  // Chat message methods
+  getDeckMessages: (deckId) => {
+    return get().deckMessages[deckId] || [];
+  },
+  
+  addMessageToDeck: (deckId, message) => set((state) => {
+    const currentMessages = state.deckMessages[deckId] || [];
+    return {
+      deckMessages: {
+        ...state.deckMessages,
+        [deckId]: [...currentMessages, message]
+      }
+    };
+  }),
+  
+  setDeckMessages: (deckId, messages) => set((state) => ({
+    deckMessages: {
+      ...state.deckMessages,
+      [deckId]: messages
+    }
+  })),
   
   // Flashcard actions
   addCardToDeck: (deckId, card) => set((state) => {
