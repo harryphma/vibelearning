@@ -205,8 +205,8 @@ const sendRecording = async () => {
     console.log(`Sending audio recording: size=${audioToSend.size} type=${audioToSend.type}`);
     
     // Convert flashcards to chat history format
-    console.log(`Active teaching deck: ${activeTeachingDeck.cards}`);
-    const chatHistory = activeTeachingDeck.cards.map((card: FlashcardData) => 
+    console.log(`Active teaching deck: ${activeTeachingDeck.flashcards}`);
+    const chatHistory = activeTeachingDeck.flashcards.map((card: FlashcardData) => 
       JSON.stringify({
         role: "system",
         content: `Question: ${card.question}\nAnswer: ${card.answer}`

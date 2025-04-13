@@ -131,7 +131,7 @@ export async function generateLLMResponse(
     { type: audioBlob.type || "audio/webm" }
   );
   const formData = new FormData();
-  formData.append('audio', audioFile);
+  formData.append('audio_file', audioFile);
   formData.append('chat_history_json', JSON.stringify(chatHistory));
   formData.append('language_code', languageCode);
 

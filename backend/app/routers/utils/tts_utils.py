@@ -231,6 +231,8 @@ def llm_learner_response(chat_history: List[Dict[str, str]]) -> str:
         "role": "user",
         "parts": [{"text": system_prompt}]
     })
+
+    
     
     # Map the standard role names to Gemini's expected roles
     # "assistant" → "model", "user" → "user"

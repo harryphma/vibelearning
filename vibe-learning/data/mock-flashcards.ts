@@ -9,7 +9,7 @@ export interface FlashcardDeck {
   title: string;
   subject: string;
   description?: string;
-  cards: FlashcardData[];
+  flashcards: FlashcardData[];
   createdAt: string;
 }
 
@@ -19,7 +19,7 @@ export const mockDecks: Record<string, FlashcardDeck> = {
     title: "Basic Arithmetic",
     subject: "mathematics",
     createdAt: new Date().toISOString(),
-    cards: [
+    flashcards: [
       {
         id: "arithmetic-1",
         question: "What is 12 × 8?",
@@ -77,7 +77,7 @@ export const mockDecks: Record<string, FlashcardDeck> = {
     title: "Cell Biology",
     subject: "science",
     createdAt: new Date().toISOString(),
-    cards: [
+    flashcards: [
       {
         id: "biology-1",
         question: "What is the powerhouse of the cell?",
@@ -110,7 +110,7 @@ export const mockDecks: Record<string, FlashcardDeck> = {
     title: "JavaScript Fundamentals",
     subject: "computer science",
     createdAt: new Date().toISOString(),
-    cards: [
+    flashcards: [
       {
         id: "programming-1",
         question: "What is a closure in JavaScript?",
