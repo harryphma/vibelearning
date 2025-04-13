@@ -1,7 +1,8 @@
-from fastapi import APIRouter, UploadFile, HTTPException, Form, Request, Depends
-from typing import Optional
+from fastapi import APIRouter, UploadFile, HTTPException, Form, Request, Depends, Body
+from typing import Optional, List, Dict, Any
 import os
 import tempfile
+import json
 from app.utils import generate_cards, parsePDF_to_text, topic_selection, edit_flashcards
 from typing import List, Dict, Any, Optional
 
@@ -9,8 +10,6 @@ router = APIRouter(
     prefix="/gemini",
     tags=["gemini"],
 )
-
-
 
 
 @router.post("/auto")
@@ -78,38 +77,39 @@ async def manual_generate(request: Request, subject: str = Form(...)):
 @router.post("/edit")
 async def edit_flashcards_endpoint(
     request: Request,
-    user_input: str = Form(...)
+    user_input: str = Form(...),
+    current_flashcards: str = Form(...)  # Changed from optional to required parameter
 ):
     """
     Edit flashcards based on user input.
     
     Args:
         user_input (str): User instructions for modifying the flashcards
+        current_flashcards (str): JSON string of current flashcards from Zustand store
         
     Returns:
         dict: A dictionary containing the updated flashcards
     """
-    # Get the latest flashcard set from session
-    if "flashcards" not in request.session:
-        request.session["flashcards"] = {}
-    
-    # Get the latest flashcard set (either auto or manual)
-    latest_type = "auto" if "auto" in request.session["flashcards"] else "manual"
-    flashcards = request.session["flashcards"].get(latest_type, [])
-    
-    if not flashcards:
-        raise HTTPException(status_code=404, detail="No flashcards found")
-    
     try:
-        # Edit flashcards using the Gemini API
-        updated_flashcards = edit_flashcards(flashcards, user_input)
+        # Parse the current flashcards from the request
+        try:
+            flashcards = json.loads(current_flashcards)
+            print(f"Using {len(flashcards)} flashcards from frontend request")
+        except json.JSONDecodeError:
+            print("Invalid flashcards JSON format from frontend")
+            raise HTTPException(status_code=400, detail="Invalid flashcards JSON format")
         
-        # Save updated flashcards to session
-        request.session["flashcards"][latest_type] = updated_flashcards
+        # If no valid flashcards were provided, return an error
+        if not flashcards:
+            raise HTTPException(status_code=400, detail="No flashcards provided to edit")
+        
+        # Match the parameter order with utils.py implementation
+        updated_flashcards = edit_flashcards(flashcards, user_input)
         
         return updated_flashcards
         
     except Exception as e:
+        print(f"Error editing flashcards: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

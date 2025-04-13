@@ -118,7 +118,7 @@ export function FlashcardDeckList({
                     "flex items-center",
                     selectedDeckId === deck.id ? "text-indigo-700" : "text-indigo-400"
                   )}>
-                    <span className="font-medium">{deck.cards.length}</span>
+                    <span className="font-medium">{deck.flashcards?.length || 0}</span>
                     <span className="ml-1">cards</span>
                   </span>
                   
