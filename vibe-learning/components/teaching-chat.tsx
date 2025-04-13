@@ -50,7 +50,6 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
       
       // Call API to generate response based on audio
       const result = await generateLLMResponse(audioBlob, chatHistory)
-      console.log("API response:", result)
       
       // Add the transcription as a user message
       const userMessage: Message = {

@@ -144,6 +144,35 @@ export async function generateLLMResponse(
       throw new Error(`API error: ${response.status}`);
     }
     const result: LLMResponseResult = await response.json();
+    const llm_text = result.response;
+    // Generate audio from LLM response text
+    const audioResponse = await fetch(`${API_URL}/tts/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: llm_text,
+        language: "en" // Use default English for now
+      })
+    });
+
+    if (!audioResponse.ok) {
+      throw new Error(`Audio API error: ${audioResponse.status}`);
+    }
+
+    // Get audio blob from response
+    const audioBlob = await audioResponse.blob();
+
+    // Create and play audio
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    await audio.play();
+
+    // Cleanup URL after playing
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+    };
     return result;
   } catch (error) {
     console.error("Error generating LLM response:", error);
