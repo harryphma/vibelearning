@@ -235,13 +235,16 @@ export function FlashcardChat({
       } 
       else {
         try {
+          // Create FormData instead of JSON
+          const formData = new FormData();
+          formData.append('subject', message.trim());
+          
           const response = await fetch(`${API_URL}/gemini/manual`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ subject: message.trim() }),
+            // Remove JSON headers
+            body: formData, // Send as FormData instead of JSON
           });
+          
           if (!response.ok) {
             throw new Error(`API error: ${response.status}`);
           }
