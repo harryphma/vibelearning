@@ -7,9 +7,8 @@ import traceback
 import sys
 import json
 from pydantic import BaseModel
-
 # Import utility functions
-from app.routers.utils.tts_utils import generate_speech_from_text, transcribe_speech_from_audio, llm_learner_response
+from app.routers.utils.tts_utils import generate_speech_from_text, transcribe_speech_from_audio, llm_learner_response, evaluate
 
 # Set up logger
 logger = logging.getLogger("tts_router")
@@ -33,19 +32,22 @@ class STTRequest(BaseModel):
     language_code: Optional[str] = "en-US"
     sample_rate_hertz: Optional[int] = 16000
 
-@router.get("/generate")
-async def generate_speech_get(text: str, language: Optional[str] = "en"):
-    """
-    Generate speech from text using Google Text-to-Speech (GET version)
-    """
-    return await generate_speech(text, language)
+# @router.get("/generate")
+# async def generate_speech_get(text: str, language: Optional[str] = "en"):
+#     """
+#     Generate speech from text using Google Text-to-Speech (GET version)
+#     """
+#     return await generate_speech(text, language)
 
 @router.post("/generate")
 async def generate_speech_post(request: TTSRequest = Body(...)):
     """
     Generate speech from text using Google Text-to-Speech (POST version)
     """
-    return await generate_speech(request.text, request.language)
+    text = request.text
+    # Sanitize text to prevent JSON string breaking
+    # Replace problematic characters and escape sequences
+    return await generate_speech(text, request.language)
 
 @router.post("/transcribe")
 async def transcribe_speech(
@@ -140,6 +142,16 @@ async def generate_llm_response(
         logger.error(error_msg)
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=error_msg)
+
+@router.post("/evaluate")
+async def evaluate_response(
+    chat_history_json: str = Form(...)
+):
+    """
+    Evaluate the quality of the chat history
+    """
+    return evaluate(chat_history_json)
+
 
 async def generate_speech(text: str, language: str):
     """
