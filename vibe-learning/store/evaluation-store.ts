@@ -14,7 +14,7 @@ interface EvaluationState {
   evaluationResults: EvaluationScore | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   setEvaluationResults: (results: EvaluationScore | null) => void;
   clearEvaluationResults: () => void;
@@ -24,23 +24,24 @@ interface EvaluationState {
 
 export const useEvaluationStore = create<EvaluationState>()(
   persist(
-    (set) => ({
+    set => ({
       // Initial state
       evaluationResults: null,
       isLoading: false,
       error: null,
-      
+
       // Actions
-      setEvaluationResults: (results) => set({ 
-        evaluationResults: results,
-        isLoading: false 
-      }),
-      
+      setEvaluationResults: results =>
+        set({
+          evaluationResults: results,
+          isLoading: false,
+        }),
+
       clearEvaluationResults: () => set({ evaluationResults: null }),
-      
-      setLoading: (loading) => set({ isLoading: loading }),
-      
-      setError: (error) => set({ error, isLoading: false })
+
+      setLoading: loading => set({ isLoading: loading }),
+
+      setError: error => set({ error, isLoading: false }),
     }),
     {
       name: 'evaluation-storage',
