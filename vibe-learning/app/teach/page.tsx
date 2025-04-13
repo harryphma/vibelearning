@@ -79,13 +79,13 @@ export default function TeachPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navigation />
-      <main className="grid flex-1 grid-cols-1 gap-4 p-4 md:grid-cols-12">
-        <div className="flex flex-col space-y-4 md:col-span-4">
-          <WebcamView onAudioRecorded={handleAudioRecorded} />
-          <TeachingFlashcard />
+      <main className="grid h-[calc(100vh-64px)] flex-1 grid-cols-1 gap-4 p-4 pb-6 md:grid-cols-12">
+        <div className="flex h-full max-h-[calc(100vh-100px)] flex-col space-y-4 md:col-span-4">
+          <WebcamView onAudioRecorded={handleAudioRecorded} className="flex-1" />
+          <TeachingFlashcard className="flex-1" />
         </div>
-        <div className="flex h-full flex-col md:col-span-8">
-          <TeachingChat ref={teachingChatRef} />
+        <div className="flex h-full max-h-[calc(100vh-100px)] flex-col md:col-span-8">
+          <TeachingChat ref={teachingChatRef} className="flex-1" />
           <Button
             onClick={handleEvaluate}
             disabled={isEvaluating || !activeTeachingDeck}
