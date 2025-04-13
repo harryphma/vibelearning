@@ -413,7 +413,7 @@ export function WebcamView({ onAudioRecorded, className }: WebcamViewProps) {
     <Card className={`overflow-hidden ${className}`}>
       <CardHeader className="p-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Webcam Recorder</CardTitle>
+          <CardTitle className="text-lg items-center justify-center">Show your face!</CardTitle>
           <div className="flex gap-2">
             <Button
               variant="outline"
