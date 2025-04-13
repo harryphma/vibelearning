@@ -49,7 +49,7 @@ export function FlashcardViewer({ cards: propCards, title, deckId }: FlashcardVi
       setTimeout(() => {
         setIsFlipped(!isFlipped);
         setIsFlipping(false);
-      }, 300);
+      }, 550); // Increased to 550ms to match CSS duration + small buffer
     }
   };
 
@@ -103,7 +103,7 @@ export function FlashcardViewer({ cards: propCards, title, deckId }: FlashcardVi
       >
         <div
           className={cn(
-            'transform-style-3d relative h-full w-full transition-transform duration-100', // Changed from 500ms to 300ms
+            'transform-style-3d relative h-full w-full transition-transform duration-500 ease-in-out', // Increased duration and added easing
             isFlipped && 'rotate-y-180'
           )}
         >
