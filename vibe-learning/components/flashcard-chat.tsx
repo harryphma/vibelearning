@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { FlashcardDeck, FlashcardData } from "@/data/mock-flashcards"
 import { ChatInput } from "@/components/chat-input"
+import { useFlashcardStore } from "@/store/flashcard-store"
+import { editFlashcards, generateFlashcards, generateFlashcardsFromPDF } from "@/lib/api/flashcards"
 
 type Message = {
   id: string
@@ -25,15 +27,21 @@ interface FlashcardChatProps {
   isFullPage?: boolean;
 }
 
-// API URL - default to localhost if not provided in env
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 export function FlashcardChat({ 
   onNewDeckCreated,
   selectedDeck,
   isEditMode = false,
   isFullPage = false
 }: FlashcardChatProps) {
+  // Use the Zustand store for deck-specific flashcards
+  const { 
+    setDeckFlashcards,
+    getDeckFlashcards,
+    addDeck,
+    updateDeck,
+    deckFlashcards
+  } = useFlashcardStore();
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -58,6 +66,11 @@ export function FlashcardChat({
         sender: "ai",
         timestamp: new Date(),
       }]);
+      
+      // Update deckFlashcards in the store when selecting a deck to edit
+      if (selectedDeck.flashcards) {
+        setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards);
+      }
     } else if (!isEditMode && !selectedDeck) {
       setMessages([{
         id: "new-deck",
@@ -69,7 +82,7 @@ export function FlashcardChat({
     setAwaitingDeckName(false);
     setPendingFileCards(null);
     setPendingSubject(null);
-  }, [isEditMode, selectedDeck]);
+  }, [isEditMode, selectedDeck, setDeckFlashcards]);
 
   const handleSendMessage = async (message: string, file: File | null = null) => {
     if (isAiResponding) return;
@@ -116,9 +129,9 @@ export function FlashcardChat({
         let finalCards = pendingFileCards;
         
         // If we have pending subject but no cards (text-only flow),
-        // create some sample flashcards for this subject
+        // create some sample flashcards for this subject if API call failed earlier
         if (!finalCards && pendingSubject) {
-          // This would be replaced by API call in production
+          // Fallback cards if API call failed
           finalCards = [
             {
               id: `card-${Date.now()}-1`,
@@ -134,14 +147,19 @@ export function FlashcardChat({
         }
 
         if (finalCards) {
+          const deckId = `deck-${Date.now()}`;
           const newDeck: FlashcardDeck = {
-            id: `deck-${Date.now()}`,
+            id: deckId,
             title: deckName,
-            subject: pendingSubject || deckName.toLowerCase(),
-            cards: finalCards,
+            description: `Flashcards about ${pendingSubject || deckName}`,
+            flashcards: finalCards,
             createdAt: new Date().toISOString(),
           };
 
+          // Store the deck and its flashcards in Zustand
+          addDeck(newDeck);
+          
+          // Also call the onNewDeckCreated prop if provided (for compatibility)
           if (onNewDeckCreated) {
             onNewDeckCreated(newDeck);
           }
@@ -163,82 +181,122 @@ export function FlashcardChat({
         setPendingSubject(null);
       } 
       else if (file) {
-        // Handle file upload to generate flashcards
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch(`${API_URL}/generate`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+        // Handle file upload to generate flashcards using our API function
+        try {
+          const cards = await generateFlashcardsFromPDF(file);
+          
+          // Process cards to ensure they match FlashcardData format
+          const processedCards = cards.map((card: any, index: number) => ({
+            id: card.id || `card-${Date.now()}-${index}`,
+            question: card.question || "Question not available",
+            answer: card.answer || "Answer not available"
+          }));
+          
+          // Store the generated cards and ask for deck name
+          setPendingFileCards(processedCards);
+          setAwaitingDeckName(true);
+          
+          // Remove loading message and add response asking for deck name
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: `Great! I've processed your file and created ${processedCards.length} flashcards. What would you like to name this deck?`,
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        } catch (error) {
+          console.error("Error processing file:", error);
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: "Sorry, there was an error processing your file. Please try again.",
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
         }
-
-        const cards = await response.json();
-        
-        // Store the generated cards and ask for deck name
-        setPendingFileCards(cards);
-        setAwaitingDeckName(true);
-        
-        // Remove loading message and add response asking for deck name
-        setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
-          return [...filteredMessages, {
-            id: `ai-${Date.now()}`,
-            content: `Great! I've processed your file and created ${cards.length} flashcards. What would you like to name this deck?`,
-            sender: "ai",
-            timestamp: new Date(),
-          }];
-        });
       } 
       else if (isEditMode && selectedDeck) {
-        // In edit mode, update the selected deck
-        const updatedCards = simulateCardUpdate(selectedDeck.cards, message);
-        const finalDeck = {
-          ...selectedDeck,
-          cards: updatedCards
-        };
-        
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (onNewDeckCreated) {
-          onNewDeckCreated(finalDeck);
-        }
+        // In edit mode, send the current flashcards from the Zustand store for editing
+        try {
+          // Get the most recent flashcards for this deck from the store
+          const currentCards = getDeckFlashcards(selectedDeck.id);
+          
+          // Edit the flashcards based on user input
+          const updatedCards = await editFlashcards(message, currentCards);
+          
+          // Update the flashcards in the store for this specific deck
+          setDeckFlashcards(selectedDeck.id, updatedCards);
+          
+          // Also update the actual deck in the store
+          updateDeck(selectedDeck.id, { flashcards: updatedCards });
+          
+          // For backward compatibility with the props pattern
+          if (onNewDeckCreated) {
+            onNewDeckCreated({
+              ...selectedDeck,
+              flashcards: updatedCards
+            });
+          }
 
-        setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
-          return [...filteredMessages, {
-            id: `ai-${Date.now()}`,
-            content: `I've updated the "${selectedDeck.title}" deck based on your input. The deck now has ${updatedCards.length} cards.`,
-            sender: "ai",
-            timestamp: new Date(),
-          }];
-        });
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: `I've updated the "${selectedDeck.title}" deck based on your input. The deck now has ${updatedCards.length} cards.`,
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        } catch (error) {
+          console.error("Error editing flashcards:", error);
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: "Sorry, there was an error updating the flashcards. Please try again.",
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        }
       } 
       else {
-        // Regular text input for creating a new deck - ask for name first
-        setAwaitingDeckName(true);
-        setPendingSubject(message.trim());
-        
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Generate flashcards using subject
+        try {
+          const cards = await generateFlashcards(message.trim());
+          
+          setPendingFileCards(cards);
+          setAwaitingDeckName(true);
+          setPendingSubject(message.trim());
 
-        setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
-          return [...filteredMessages, {
-            id: `ai-${Date.now()}`,
-            content: `I can create flashcards about "${message}". What would you like to name this deck?`,
-            sender: "ai",
-            timestamp: new Date(),
-          }];
-        });
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: `I can create ${cards.length} flashcards for the subject "${message}". What would you like to name this deck?`,
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        } catch (error) {
+          console.error("Error fetching flashcards:", error);
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: "Sorry, there was an error processing your request. Please try again.",
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        }
       }
     } catch (error) {
-      console.error("Error processing message:", error);
-      
+      console.error("Error processing request:", error);
       setMessages(prev => {
         const filteredMessages = prev.filter(msg => !msg.isLoading);
         return [...filteredMessages, {
@@ -248,46 +306,24 @@ export function FlashcardChat({
           timestamp: new Date(),
         }];
       });
-      
-      // Reset states on error
-      setAwaitingDeckName(false);
-      setPendingFileCards(null);
-      setPendingSubject(null);
     } finally {
       setIsAiResponding(false);
     }
   }
 
-  // Helper function to simulate updating cards based on user input
-  function simulateCardUpdate(existingCards: FlashcardData[], userInput: string): FlashcardData[] {
-    const lowercaseInput = userInput.toLowerCase();
-    
-    // Check if user is asking to add a new card
-    if (lowercaseInput.includes("add") || lowercaseInput.includes("new card") || lowercaseInput.includes("create")) {
-      // Simulate adding a new card
-      const newId = `card-${Date.now()}`;
-      const newCard = {
-        id: newId,
-        question: `New question about ${lowercaseInput.split(" ").slice(-2).join(" ")}?`,
-        answer: `Answer related to ${lowercaseInput.split(" ").slice(-2).join(" ")}.`
-      };
-      
-      return [...existingCards, newCard];
-    }
-    
-    return [...existingCards];
-  }
-
   return (
     <div className={cn(
-      "flex flex-col h-full",
+      "flex flex-col h-full bg-gradient-to-br from-white to-indigo-50/20 rounded-lg border border-indigo-100",
       isFullPage && "max-w-4xl mx-auto"
     )}>
-      <div className="p-4 border-b">
-        <h2 className="font-semibold">
+      <div className="p-4 border-b border-indigo-100 bg-white">
+        <h2 className="font-semibold text-indigo-900 flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
+            <span className="text-white text-xs">AI</span>
+          </div>
           {isEditMode ? "Flashcard Editor" : "Flashcard Creator"}
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-indigo-600 mt-1">
           {isEditMode 
             ? "Chat with AI to edit and improve your flashcards" 
             : awaitingDeckName
@@ -298,25 +334,41 @@ export function FlashcardChat({
       </div>
 
       <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div key={message.id} className={cn("flex", message.sender === "user" ? "justify-end" : "justify-start")}>
+        <div className="space-y-4 pb-1">
+          {messages.map((message, index) => (
+            <div 
+              key={message.id} 
+              className={cn(
+                "flex", 
+                message.sender === "user" ? "justify-end" : "justify-start",
+                index === messages.length - 1 && !message.isLoading && "animate-appear"
+              )}
+            >
               <div
                 className={cn(
-                  "max-w-[80%] rounded-lg p-3",
-                  message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
+                  "max-w-[80%] rounded-2xl p-4 shadow-sm",
+                  message.sender === "user" 
+                    ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-br-none" 
+                    : "bg-gradient-to-r from-white to-indigo-50 text-gray-700 border border-indigo-100 rounded-bl-none",
                 )}
               >
                 {message.isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
+                  <div className="flex items-center space-x-2 py-1">
+                    <div className="w-2 h-2 rounded-full bg-current animate-pulse-dot1"></div>
+                    <div className="w-2 h-2 rounded-full bg-current animate-pulse-dot2"></div>
+                    <div className="w-2 h-2 rounded-full bg-current animate-pulse-dot3"></div>
                   </div>
                 ) : (
                   <>
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    <div className="mt-1 text-xs opacity-70">{formatTime(message.timestamp)}</div>
+                    <div className="mt-2 text-xs opacity-70 flex justify-between items-center">
+                      <span>{formatTime(message.timestamp)}</span>
+                      {message.hasFile && (
+                        <span className="flex items-center ml-2 bg-white/20 px-1.5 py-0.5 rounded text-[10px]">
+                          PDF
+                        </span>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -325,7 +377,7 @@ export function FlashcardChat({
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t">
+      <div className="p-4 border-t border-indigo-100 bg-gradient-to-b from-white to-indigo-50/30">
         <ChatInput
           onSendMessage={handleSendMessage}
           isDisabled={isAiResponding}

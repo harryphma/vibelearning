@@ -7,4 +7,5 @@ uvicorn
 fastapi
 PyPDF2
 gtts
+itsdangerous
 python-multipart

@@ -1,0 +1,296 @@
+import { create } from 'zustand';
+import { FlashcardData, FlashcardDeck } from '@/data/mock-flashcards';
+import { editFlashcards, generateFlashcards, generateFlashcardsFromPDF } from '@/lib/api/flashcards';
+
+interface FlashcardState {
+  decks: FlashcardDeck[];
+  activeDeckId: string | null;
+  isLoading: boolean;
+  error: string | null;
+  deckFlashcards: Record<string, FlashcardData[]>; // Track flashcards for each deck by ID
+  
+  // Actions
+  setDecks: (decks: FlashcardDeck[]) => void;
+  addDeck: (deck: FlashcardDeck) => void;
+  updateDeck: (deckId: string, updatedDeck: Partial<FlashcardDeck>) => void;
+  removeDeck: (deckId: string) => void;
+  setActiveDeckId: (deckId: string | null) => void;
+  
+  // Flashcard actions
+  addCardToDeck: (deckId: string, card: FlashcardData) => void;
+  updateCardInDeck: (deckId: string, cardId: string, updatedCard: Partial<FlashcardData>) => void;
+  removeCardFromDeck: (deckId: string, cardId: string) => void;
+  
+  // New flashcard tracking actions
+  setDeckFlashcards: (deckId: string, flashcards: FlashcardData[]) => void;
+  getDeckFlashcards: (deckId: string) => FlashcardData[];
+  
+  // API-related actions
+  generateFlashcardDeck: (subject: string, title?: string) => Promise<string | null>;
+  generateFlashcardsFromPDF: (file: File, title?: string) => Promise<string | null>;
+  editFlashcardsInDeck: (deckId: string, userInput: string) => Promise<void>;
+  
+  // Helper methods
+  getActiveDeck: () => FlashcardDeck | null;
+  getFlashcardsFromActiveDeck: () => FlashcardData[];
+  getDeck: (deckId: string) => FlashcardDeck | null;
+}
+
+export const useFlashcardStore = create<FlashcardState>((set, get) => ({
+  decks: [],
+  activeDeckId: null,
+  isLoading: false,
+  error: null,
+  deckFlashcards: {}, // Initialize empty record
+  
+  // Actions
+  setDecks: (decks) => set({ decks }),
+  
+  addDeck: (deck) => set((state) => {
+    // Add deck and also store its flashcards in deckFlashcards
+    const updatedDeckFlashcards = { 
+      ...state.deckFlashcards, 
+      [deck.id]: deck.flashcards 
+    };
+    
+    return { 
+      decks: [...state.decks, deck],
+      deckFlashcards: updatedDeckFlashcards
+    };
+  }),
+  
+  updateDeck: (deckId, updatedDeck) => set((state) => {
+    const updatedDecks = state.decks.map((deck) => 
+      deck.id === deckId ? { ...deck, ...updatedDeck } : deck
+    );
+    
+    // If flashcards are updated, also update them in deckFlashcards
+    let updatedDeckFlashcards = { ...state.deckFlashcards };
+    if (updatedDeck.flashcards) {
+      updatedDeckFlashcards[deckId] = updatedDeck.flashcards;
+    }
+    
+    return {
+      decks: updatedDecks,
+      deckFlashcards: updatedDeckFlashcards
+    };
+  }),
+  
+  removeDeck: (deckId) => set((state) => {
+    // Remove deck and its flashcards
+    const { [deckId]: _, ...remainingDeckFlashcards } = state.deckFlashcards;
+    
+    return {
+      decks: state.decks.filter((deck) => deck.id !== deckId),
+      activeDeckId: state.activeDeckId === deckId ? null : state.activeDeckId,
+      deckFlashcards: remainingDeckFlashcards
+    };
+  }),
+  
+  setActiveDeckId: (deckId) => set({ activeDeckId: deckId }),
+  
+  // New flashcard tracking methods
+  setDeckFlashcards: (deckId, flashcards) => set((state) => ({
+    deckFlashcards: {
+      ...state.deckFlashcards,
+      [deckId]: flashcards
+    }
+  })),
+  
+  getDeckFlashcards: (deckId) => {
+    return get().deckFlashcards[deckId] || [];
+  },
+  
+  // Flashcard actions
+  addCardToDeck: (deckId, card) => set((state) => {
+    const updatedDecks = state.decks.map((deck) => 
+      deck.id === deckId 
+        ? { ...deck, flashcards: [...deck.flashcards, card] } 
+        : deck
+    );
+    
+    // Also update in deckFlashcards
+    const currentCards = state.deckFlashcards[deckId] || [];
+    const updatedCards = [...currentCards, card];
+    
+    return {
+      decks: updatedDecks,
+      deckFlashcards: {
+        ...state.deckFlashcards,
+        [deckId]: updatedCards
+      }
+    };
+  }),
+  
+  updateCardInDeck: (deckId, cardId, updatedCard) => set((state) => {
+    const updatedDecks = state.decks.map((deck) => 
+      deck.id === deckId 
+        ? { 
+            ...deck, 
+            flashcards: deck.flashcards.map((card) => 
+              card.id === cardId ? { ...card, ...updatedCard } : card
+            )
+          } 
+        : deck
+    );
+    
+    // Also update in deckFlashcards
+    const currentCards = state.deckFlashcards[deckId] || [];
+    const updatedCards = currentCards.map((card) =>
+      card.id === cardId ? { ...card, ...updatedCard } : card
+    );
+    
+    return {
+      decks: updatedDecks,
+      deckFlashcards: {
+        ...state.deckFlashcards,
+        [deckId]: updatedCards
+      }
+    };
+  }),
+  
+  removeCardFromDeck: (deckId, cardId) => set((state) => {
+    const updatedDecks = state.decks.map((deck) => 
+      deck.id === deckId 
+        ? { 
+            ...deck, 
+            flashcards: deck.flashcards.filter((card) => card.id !== cardId)
+          } 
+        : deck
+    );
+    
+    // Also update in deckFlashcards
+    const currentCards = state.deckFlashcards[deckId] || [];
+    const updatedCards = currentCards.filter((card) => card.id !== cardId);
+    
+    return {
+      decks: updatedDecks,
+      deckFlashcards: {
+        ...state.deckFlashcards,
+        [deckId]: updatedCards
+      }
+    };
+  }),
+  
+  // API-related actions
+  generateFlashcardDeck: async (subject, title) => {
+    set({ isLoading: true, error: null });
+    try {
+      const cards = await generateFlashcards(subject);
+      const deckId = `deck-${Date.now()}`;
+      const newDeck: FlashcardDeck = {
+        id: deckId,
+        title: title || `Flashcards: ${subject}`,
+        description: `Flashcards about ${subject}`,
+        flashcards: cards,
+        createdAt: new Date().toISOString(),
+      };
+      
+      get().addDeck(newDeck);
+      set({ 
+        activeDeckId: deckId,
+        deckFlashcards: {
+          ...get().deckFlashcards,
+          [deckId]: cards
+        }
+      });
+      
+      return deckId;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate flashcards';
+      set({ error: errorMessage });
+      return null;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  generateFlashcardsFromPDF: async (file, title) => {
+    set({ isLoading: true, error: null });
+    try {
+      const cards = await generateFlashcardsFromPDF(file);
+      const deckId = `deck-${Date.now()}`;
+      const newDeck: FlashcardDeck = {
+        id: deckId,
+        title: title || `Flashcards: ${file.name.split('.')[0]}`,
+        description: `Flashcards generated from ${file.name}`,
+        flashcards: cards,
+        createdAt: new Date().toISOString(),
+      };
+      
+      get().addDeck(newDeck);
+      set({ 
+        activeDeckId: deckId,
+        deckFlashcards: {
+          ...get().deckFlashcards,
+          [deckId]: cards
+        }
+      });
+      
+      return deckId;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate flashcards from PDF';
+      set({ error: errorMessage });
+      return null;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  editFlashcardsInDeck: async (deckId, userInput) => {
+    set({ isLoading: true, error: null });
+    try {
+      // Use the most recent flashcards from deckFlashcards
+      const currentFlashcards = get().getDeckFlashcards(deckId);
+      
+      if (!currentFlashcards || currentFlashcards.length === 0) {
+        // If no flashcards in our storage, fall back to deck's flashcards
+        const deck = get().getDeck(deckId);
+        if (!deck) {
+          throw new Error('Deck not found');
+        }
+        
+        const updatedCards = await editFlashcards(userInput, deck.flashcards);
+        get().setDeckFlashcards(deckId, updatedCards);
+        get().updateDeck(deckId, { flashcards: updatedCards });
+      } else {
+        // Use the stored flashcards
+        const updatedCards = await editFlashcards(userInput, currentFlashcards);
+        get().setDeckFlashcards(deckId, updatedCards);
+        get().updateDeck(deckId, { flashcards: updatedCards });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to edit flashcards';
+      set({ error: errorMessage });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  
+  // Helper methods
+  getActiveDeck: () => {
+    const { decks, activeDeckId } = get();
+    if (!activeDeckId) return null;
+    return decks.find((deck) => deck.id === activeDeckId) || null;
+  },
+  
+  getFlashcardsFromActiveDeck: () => {
+    const { activeDeckId, deckFlashcards } = get();
+    
+    if (!activeDeckId) return [];
+    
+    // Prefer stored flashcards if available
+    const storedFlashcards = deckFlashcards[activeDeckId];
+    if (storedFlashcards && storedFlashcards.length > 0) {
+      return storedFlashcards;
+    }
+    
+    // Fall back to deck.flashcards if stored ones aren't available
+    const activeDeck = get().getActiveDeck();
+    return activeDeck ? activeDeck.flashcards : [];
+  },
+  
+  getDeck: (deckId) => {
+    return get().decks.find((deck) => deck.id === deckId) || null;
+  }
+}));
