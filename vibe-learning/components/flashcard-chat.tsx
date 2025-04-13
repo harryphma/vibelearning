@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { FlashcardDeck, FlashcardData } from "@/data/mock-flashcards"
 import { ChatInput } from "@/components/chat-input"
+import { useFlashcardStore } from "@/store/flashcard-store"
+import { editFlashcards, generateFlashcards, generateFlashcardsFromPDF } from "@/lib/api/flashcards"
 
 type Message = {
   id: string
@@ -25,15 +27,21 @@ interface FlashcardChatProps {
   isFullPage?: boolean;
 }
 
-// API URL - default to localhost if not provided in env
-const API_URL ="http://localhost:8000/api";
-
 export function FlashcardChat({ 
   onNewDeckCreated,
   selectedDeck,
   isEditMode = false,
   isFullPage = false
 }: FlashcardChatProps) {
+  // Use the Zustand store for deck-specific flashcards
+  const { 
+    setDeckFlashcards,
+    getDeckFlashcards,
+    addDeck,
+    updateDeck,
+    deckFlashcards
+  } = useFlashcardStore();
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -58,6 +66,11 @@ export function FlashcardChat({
         sender: "ai",
         timestamp: new Date(),
       }]);
+      
+      // Update deckFlashcards in the store when selecting a deck to edit
+      if (selectedDeck.flashcards) {
+        setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards);
+      }
     } else if (!isEditMode && !selectedDeck) {
       setMessages([{
         id: "new-deck",
@@ -69,7 +82,7 @@ export function FlashcardChat({
     setAwaitingDeckName(false);
     setPendingFileCards(null);
     setPendingSubject(null);
-  }, [isEditMode, selectedDeck]);
+  }, [isEditMode, selectedDeck, setDeckFlashcards]);
 
   const handleSendMessage = async (message: string, file: File | null = null) => {
     if (isAiResponding) return;
@@ -134,14 +147,19 @@ export function FlashcardChat({
         }
 
         if (finalCards) {
+          const deckId = `deck-${Date.now()}`;
           const newDeck: FlashcardDeck = {
-            id: `deck-${Date.now()}`,
+            id: deckId,
             title: deckName,
-            subject: pendingSubject || deckName.toLowerCase(),
-            cards: finalCards,
+            description: `Flashcards about ${pendingSubject || deckName}`,
+            flashcards: finalCards,
             createdAt: new Date().toISOString(),
           };
 
+          // Store the deck and its flashcards in Zustand
+          addDeck(newDeck);
+          
+          // Also call the onNewDeckCreated prop if provided (for compatibility)
           if (onNewDeckCreated) {
             onNewDeckCreated(newDeck);
           }
@@ -163,93 +181,94 @@ export function FlashcardChat({
         setPendingSubject(null);
       } 
       else if (file) {
-        // Handle file upload to generate flashcards
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch(`${API_URL}/gemini/auto`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+        // Handle file upload to generate flashcards using our API function
+        try {
+          const cards = await generateFlashcardsFromPDF(file);
+          
+          // Process cards to ensure they match FlashcardData format
+          const processedCards = cards.map((card: any, index: number) => ({
+            id: card.id || `card-${Date.now()}-${index}`,
+            question: card.question || "Question not available",
+            answer: card.answer || "Answer not available"
+          }));
+          
+          // Store the generated cards and ask for deck name
+          setPendingFileCards(processedCards);
+          setAwaitingDeckName(true);
+          
+          // Remove loading message and add response asking for deck name
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: `Great! I've processed your file and created ${processedCards.length} flashcards. What would you like to name this deck?`,
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        } catch (error) {
+          console.error("Error processing file:", error);
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: "Sorry, there was an error processing your file. Please try again.",
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
         }
-
-        const result = await response.json();
-        // Extract cards from the response - handle both formats
-        const cards = result.flashcards || result;
-        
-        console.log("File upload response:", result);
-        
-        if (!cards || !Array.isArray(cards)) {
-          throw new Error("Invalid response format from server");
-        }
-        
-        // Process cards to ensure they match FlashcardData format
-        const processedCards = cards.map((card: any, index: number) => ({
-          id: card.id || `card-${Date.now()}-${index}`,
-          question: card.question || "Question not available",
-          answer: card.answer || "Answer not available"
-        }));
-        
-        // Store the generated cards and ask for deck name
-        setPendingFileCards(processedCards);
-        setAwaitingDeckName(true);
-        
-        // Remove loading message and add response asking for deck name
-        setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
-          return [...filteredMessages, {
-            id: `ai-${Date.now()}`,
-            content: `Great! I've processed your file and created ${processedCards.length} flashcards. What would you like to name this deck?`,
-            sender: "ai",
-            timestamp: new Date(),
-          }];
-        });
       } 
       else if (isEditMode && selectedDeck) {
-        // In edit mode, update the selected deck
-        const updatedCards = simulateCardUpdate(selectedDeck.cards, message);
-        const finalDeck = {
-          ...selectedDeck,
-          cards: updatedCards
-        };
-        
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (onNewDeckCreated) {
-          onNewDeckCreated(finalDeck);
-        }
-
-        setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
-          return [...filteredMessages, {
-            id: `ai-${Date.now()}`,
-            content: `I've updated the "${selectedDeck.title}" deck based on your input. The deck now has ${updatedCards.length} cards.`,
-            sender: "ai",
-            timestamp: new Date(),
-          }];
-        });
-      } 
-      else {
+        // In edit mode, send the current flashcards from the Zustand store for editing
         try {
-          // Create FormData instead of JSON
-          const formData = new FormData();
-          formData.append('subject', message.trim());
+          // Get the most recent flashcards for this deck from the store
+          const currentCards = getDeckFlashcards(selectedDeck.id);
           
-          const response = await fetch(`${API_URL}/gemini/manual`, {
-            method: 'POST',
-            // Remove JSON headers
-            body: formData, // Send as FormData instead of JSON
-          });
+          // Edit the flashcards based on user input
+          const updatedCards = await editFlashcards(message, currentCards);
           
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
+          // Update the flashcards in the store for this specific deck
+          setDeckFlashcards(selectedDeck.id, updatedCards);
+          
+          // Also update the actual deck in the store
+          updateDeck(selectedDeck.id, { flashcards: updatedCards });
+          
+          // For backward compatibility with the props pattern
+          if (onNewDeckCreated) {
+            onNewDeckCreated({
+              ...selectedDeck,
+              flashcards: updatedCards
+            });
           }
 
-          const cards = await response.json();
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: `I've updated the "${selectedDeck.title}" deck based on your input. The deck now has ${updatedCards.length} cards.`,
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        } catch (error) {
+          console.error("Error editing flashcards:", error);
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => !msg.isLoading);
+            return [...filteredMessages, {
+              id: `ai-${Date.now()}`,
+              content: "Sorry, there was an error updating the flashcards. Please try again.",
+              sender: "ai",
+              timestamp: new Date(),
+            }];
+          });
+        }
+      } 
+      else {
+        // Generate flashcards using subject
+        try {
+          const cards = await generateFlashcards(message.trim());
+          
           setPendingFileCards(cards);
           setAwaitingDeckName(true);
           setPendingSubject(message.trim());
@@ -274,8 +293,6 @@ export function FlashcardChat({
               timestamp: new Date(),
             }];
           });
-        } finally {
-          setIsAiResponding(false);
         }
       }
     } catch (error) {
@@ -292,26 +309,6 @@ export function FlashcardChat({
     } finally {
       setIsAiResponding(false);
     }
-  }
-
-  // Helper function to simulate updating cards based on user input
-  function simulateCardUpdate(existingCards: FlashcardData[], userInput: string): FlashcardData[] {
-    const lowercaseInput = userInput.toLowerCase();
-    
-    // Check if user is asking to add a new card
-    if (lowercaseInput.includes("add") || lowercaseInput.includes("new card") || lowercaseInput.includes("create")) {
-      // Simulate adding a new card
-      const newId = `card-${Date.now()}`;
-      const newCard = {
-        id: newId,
-        question: `New question about ${lowercaseInput.split(" ").slice(-2).join(" ")}?`,
-        answer: `Answer related to ${lowercaseInput.split(" ").slice(-2).join(" ")}.`
-      };
-      
-      return [...existingCards, newCard];
-    }
-    
-    return [...existingCards];
   }
 
   return (

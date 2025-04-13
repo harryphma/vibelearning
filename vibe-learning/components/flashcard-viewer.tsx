@@ -6,17 +6,27 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { ChevronLeft, ChevronRight, RotateCw, Sparkles, BookOpen } from "lucide-react"
 import { FlashcardData } from "@/data/mock-flashcards"
+import { useFlashcardStore } from "@/store/flashcard-store"
 
 interface FlashcardViewerProps {
-  cards: FlashcardData[];
+  cards?: FlashcardData[];
   title?: string;
+  deckId?: string; // Add deckId prop to fetch cards from Zustand store
 }
 
-export function FlashcardViewer({ cards = [], title }: FlashcardViewerProps) {
+export function FlashcardViewer({ cards: propCards, title, deckId }: FlashcardViewerProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isFlipping, setIsFlipping] = useState(false)
   const [showAnimation, setShowAnimation] = useState(false)
+  
+  // Get flashcards from the Zustand store if deckId is provided
+  const { getDeckFlashcards, getFlashcardsFromActiveDeck } = useFlashcardStore();
+  
+  // Determine which cards to use - prefer Zustand store cards if deckId is provided
+  const cards = deckId 
+    ? getDeckFlashcards(deckId)
+    : propCards || [];
 
   // Add safety check before accessing cards array
   const currentCard = cards && cards.length > 0 ? cards[currentCardIndex] : null;
