@@ -41,7 +41,7 @@ export function Navigation() {
       <div className="flex h-16 items-center px-4 md:px-6">
         <div className="flex items-center gap-2">
           <BookOpen className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Vibe Learning</span>
+          <span className="text-xl font-bold">CogniFlow</span>
         </div>
         <nav className="ml-auto flex items-center gap-4 md:gap-6">
           <div className="hidden md:flex items-center gap-6">

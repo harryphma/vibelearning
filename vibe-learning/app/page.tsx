@@ -9,6 +9,7 @@ import { BookOpen, Brain, Lightbulb } from "lucide-react"
 import { TTSTest } from "@/components/tts-test"
 import { useRouter } from "next/navigation"
 import { useFlashcardStore } from "@/store/flashcard-store"
+import Image from "next/image"
 
 export default function HomePage() {
   const router = useRouter()
@@ -68,7 +69,19 @@ export default function HomePage() {
       <main className="flex-1 flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
           <div className="max-w-3xl w-full text-center space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight">Welcome to Vibe Learning</h1>
+            {/* Added CogniFlow logo */}
+            <div className="flex justify-center mb-6">
+              <div className="relative w-40 h-40">
+                <Image 
+                  src="/logo.png" 
+                  alt="CogniFlow Logo" 
+                  fill
+                  style={{ objectFit: "contain" }}
+                  priority
+                />
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight">Welcome to CogniFlow</h1>
             <p className="text-xl text-muted-foreground">
               Create flashcards, study, and teach concepts back to improve your learning.
             </p>
