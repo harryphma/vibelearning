@@ -22,7 +22,7 @@ export interface TeachingChatHandle {
   handleAudioRecorded: (audioBlob: Blob, chatHistory: string[]) => Promise<void>;
 }
 
-export const TeachingChat = forwardRef<TeachingChatHandle, {}>((props, ref) => {
+export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<HTMLDivElement>>((props, ref) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -205,3 +205,5 @@ export const TeachingChat = forwardRef<TeachingChatHandle, {}>((props, ref) => {
     </div>
   )
 })
+
+TeachingChat.displayName = "TeachingChat";

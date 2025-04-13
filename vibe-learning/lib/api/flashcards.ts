@@ -154,7 +154,13 @@ export async function generateLLMResponse(
 /**
  * Helper function to process cards from the API and ensure they match the FlashcardData format
  */
-function processCards(cards: any[]): FlashcardData[] {
+interface RawCardData {
+  id?: string;
+  question?: string;
+  answer?: string;
+}
+
+function processCards(cards: RawCardData[]): FlashcardData[] {
   return cards.map((card, index) => ({
     id: card.id || `card-${Date.now()}-${index}`,
     question: card.question || "Question not available",
