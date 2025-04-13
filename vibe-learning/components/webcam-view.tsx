@@ -485,9 +485,9 @@ export function WebcamView({ onAudioRecorded, className }: WebcamViewProps) {
           isActive={cameraActive}
           isRecording={isRecording}
           recordingReady={recordingReady}
-          videoRef={videoRef}
+          videoRef={videoRef as React.RefObject<HTMLVideoElement>}
           positionBottomLeft={positionBottomLeft}
-          activeTeachingDeck={activeTeachingDeck}
+          activeTeachingDeck={activeTeachingDeck || undefined}
         />
       </CardContent>
     </Card>

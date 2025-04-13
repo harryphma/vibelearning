@@ -161,7 +161,7 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
           )}
         </div>
 
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1 p-4 overflow-y-auto max-h-[64vh]">
           <div className="space-y-4">
             {messages.map(message => (
               <div
