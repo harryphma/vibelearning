@@ -132,7 +132,7 @@ export default function HomePage() {
             />
             {isProcessing && (
               <div className="text-muted-foreground mt-2 text-center text-sm">
-                Creating flashcards... You'll be redirected when they're ready.
+                Creating flashcards... You will be redirected when they are ready.
               </div>
             )}
           </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { useFlashcardStore } from '@/store/flashcard-store';
+import { FlashcardDeck } from '@/data/mock-flashcards';
 import { BookOpen, ChevronLeft, ChevronRight, Lightbulb, RotateCw, Sparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,11 @@ import {
 
 import { cn } from '@/lib/utils';
 
-export function TeachingFlashcard() {
+interface TeachingFlashcardProps {
+  className?: string;
+}
+
+export function TeachingFlashcard({ className }: TeachingFlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnimation, setShowAnimation] = useState(false);
@@ -65,7 +70,7 @@ export function TeachingFlashcard() {
     }
   };
 
-  const handleSelectDeck = deck => {
+  const handleSelectDeck = (deck: FlashcardDeck) => {
     setActiveTeachingDeck(deck);
   };
 
@@ -73,7 +78,8 @@ export function TeachingFlashcard() {
     <Card
       className={cn(
         'flex flex-col overflow-visible border border-indigo-100 shadow-md',
-        showAnimation && 'animate-appear'
+        showAnimation && 'animate-appear',
+        className
       )}
     >
       <CardHeader className="border-b border-indigo-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-4">

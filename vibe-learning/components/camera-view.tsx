@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { Camera, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FlashcardDeck } from '@/data/mock-flashcards';
 
 interface CameraViewProps {
   isActive: boolean;
@@ -10,7 +11,7 @@ interface CameraViewProps {
   recordingReady: boolean;
   videoRef: React.RefObject<HTMLVideoElement>;
   positionBottomLeft?: boolean;
-  activeTeachingDeck?: any;
+  activeTeachingDeck?: FlashcardDeck;
   className?: string;
 }
 

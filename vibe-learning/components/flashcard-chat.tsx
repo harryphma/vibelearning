@@ -96,8 +96,8 @@ export function FlashcardChat({
       }
 
       // Update deckFlashcards in the store when selecting a deck to edit
-      if (selectedDeck.cards) {
-        setDeckFlashcards(selectedDeck.id, selectedDeck.cards);
+      if (selectedDeck.flashcards) {
+        setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards);
       }
     } else if (!isEditMode && !selectedDeck) {
       // Reset messages for creating a new deck
@@ -170,7 +170,7 @@ export function FlashcardChat({
       if (awaitingDeckName && (pendingFileCards || pendingSubject)) {
         // User is providing a name for the deck
         const deckName = message.trim();
-        let finalCards = pendingFileCards;
+        const finalCards = pendingFileCards;
 
         // ... existing deck creation code ...
 
@@ -179,6 +179,7 @@ export function FlashcardChat({
           const newDeck: FlashcardDeck = {
             id: deckId,
             title: deckName,
+            subject: pendingSubject || deckName,
             description: `Flashcards about ${pendingSubject || deckName}`,
             flashcards: finalCards,
             createdAt: new Date().toISOString(),
@@ -214,7 +215,7 @@ export function FlashcardChat({
           const cards = await generateFlashcardsFromPDF(file);
 
           // Process cards to ensure they match FlashcardData format
-          const processedCards = cards.map((card: any, index: number) => ({
+          const processedCards = cards.map((card: {id?: string; question?: string; answer?: string}, index: number) => ({
             id: card.id || `card-${Date.now()}-${index}`,
             question: card.question || 'Question not available',
             answer: card.answer || 'Answer not available',
@@ -259,13 +260,13 @@ export function FlashcardChat({
           setDeckFlashcards(selectedDeck.id, updatedCards);
 
           // Also update the actual deck in the store
-          updateDeck(selectedDeck.id, { cards: updatedCards });
+          updateDeck(selectedDeck.id, { flashcards: updatedCards });
 
           // For backward compatibility with the props pattern
           if (onNewDeckCreated) {
             onNewDeckCreated({
               ...selectedDeck,
-              cards: updatedCards,
+              flashcards: updatedCards,
             });
           }
 
@@ -348,7 +349,7 @@ export function FlashcardChat({
     const deckToTeach = {
       ...selectedDeck,
       flashcards:
-        flashcardsToUse && flashcardsToUse.length > 0 ? flashcardsToUse : selectedDeck.cards || [],
+        flashcardsToUse && flashcardsToUse.length > 0 ? flashcardsToUse : selectedDeck.flashcards || [],
     };
 
     // Set as active teaching deck and navigate
@@ -384,7 +385,7 @@ export function FlashcardChat({
 
         {/* Teach button properly positioned in the header */}
         {selectedDeck &&
-          ((selectedDeck.cards && selectedDeck.cards.length > 0) ||
+          ((selectedDeck.flashcards && selectedDeck.flashcards.length > 0) ||
             (getDeckFlashcards(selectedDeck.id) &&
               getDeckFlashcards(selectedDeck.id).length > 0)) && (
             <Button
