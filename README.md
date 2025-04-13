@@ -2,7 +2,7 @@
 
 CogniFlow is an interactive learning platform that uses AI to help users create flashcards, study, and teach concepts back to improve their learning experience.
 
-![CogniFlow Logo](/public/logo.png)
+![CogniFlow Logo](vibe-learning/public/logo.png)
 
 ## Features
 
