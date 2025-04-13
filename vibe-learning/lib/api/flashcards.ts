@@ -2,6 +2,10 @@ import { FlashcardData } from "@/data/mock-flashcards";
 
 // API URL - default to localhost if not provided in env
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+interface LLMResponseResult {
+  response: string;
+  transcribed_text: string;
+}
 
 /**
  * Generate flashcards from a subject using the AI
@@ -109,9 +113,83 @@ export async function editFlashcards(
 }
 
 /**
+ * Generate an LLM response based on audio input and chat history
+ * 
+ * @param audioBlob The audio blob containing the user's spoken message
+ * @param chatHistory The current chat history
+ * @param languageCode The language code for speech recognition (default: "en-US")
+ * @returns Object containing the LLM response and transcribed text
+ */
+export async function generateLLMResponse(
+  audioBlob: Blob,
+  chatHistory: string[],
+  languageCode = "en-US"
+): Promise<LLMResponseResult> {
+  const audioFile = new File(
+    [audioBlob],
+    `audio-${Date.now()}.webm`, 
+    { type: audioBlob.type || "audio/webm" }
+  );
+  const formData = new FormData();
+  formData.append('audio_file', audioFile);
+  formData.append('chat_history_json', JSON.stringify(chatHistory));
+  formData.append('language_code', languageCode);
+
+  try {
+    const response = await fetch(`${API_URL}/tts/generate_llm_response`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    const result: LLMResponseResult = await response.json();
+    const llm_text = result.response;
+    // Generate audio from LLM response text
+    const audioResponse = await fetch(`${API_URL}/tts/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: llm_text,
+        language: "en" // Use default English for now
+      })
+    });
+
+    if (!audioResponse.ok) {
+      throw new Error(`Audio API error: ${audioResponse.status}`);
+    }
+
+    // Get audio blob from response
+    const audioBlob = await audioResponse.blob();
+
+    // Create and play audio
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    await audio.play();
+
+    // Cleanup URL after playing
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+    };
+    return result;
+  } catch (error) {
+    console.error("Error generating LLM response:", error);
+    throw error;
+  }
+}
+
+/**
  * Helper function to process cards from the API and ensure they match the FlashcardData format
  */
-function processCards(cards: any[]): FlashcardData[] {
+interface RawCardData {
+  id?: string;
+  question?: string;
+  answer?: string;
+}
+
+function processCards(cards: RawCardData[]): FlashcardData[] {
   return cards.map((card, index) => ({
     id: card.id || `card-${Date.now()}-${index}`,
     question: card.question || "Question not available",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, RotateCw, Sparkles, BookOpen } from "lucide-react"
 import { FlashcardData } from "@/data/mock-flashcards"
 import { useFlashcardStore } from "@/store/flashcard-store"
@@ -27,6 +28,8 @@ export function FlashcardViewer({ cards: propCards, title, deckId }: FlashcardVi
   const cards = deckId 
     ? getDeckFlashcards(deckId)
     : propCards || [];
+  
+  console.log("Cards from Zustand store:", cards);
 
   // Add safety check before accessing cards array
   const currentCard = cards && cards.length > 0 ? cards[currentCardIndex] : null;
