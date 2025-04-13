@@ -181,6 +181,41 @@ export async function generateLLMResponse(
 }
 
 /**
+ * Evaluate a chat conversation using the API
+ * 
+ * @param chatHistory Array of chat messages in {role, content} format
+ * @returns Evaluation scores for the conversation
+ */
+export async function evaluateChat(chatHistory: {role: string, content: string}[]): Promise<{
+  knowledge_accuracy: number,
+  explanation_quality: number,
+  intuitiveness: number,
+  overall_score: number
+}> {
+  try {
+    const response = await fetch(`${API_URL}/tts/evaluate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_history_json: JSON.stringify(chatHistory)
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error evaluating chat:", error);
+    throw error;
+  }
+}
+
+/**
  * Helper function to process cards from the API and ensure they match the FlashcardData format
  */
 interface RawCardData {
