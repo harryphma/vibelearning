@@ -19,7 +19,28 @@ export default function EvaluatePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulating API fetch - replace with actual API call
+    // Try to get evaluation results from sessionStorage
+    const storedResults = sessionStorage.getItem('evaluationResults')
+    
+    if (storedResults) {
+      try {
+        const parsedResults = JSON.parse(storedResults)
+        setScores(parsedResults)
+        setLoading(false)
+        // Clear from session storage after loading
+        sessionStorage.removeItem('evaluationResults')
+      } catch (error) {
+        console.error("Error parsing evaluation results:", error)
+        setDefaultScores()
+      }
+    } else {
+      // Fallback to default scores if no stored results
+      setDefaultScores()
+    }
+  }, [])
+
+  // Helper function to set default scores for demo purposes
+  const setDefaultScores = () => {
     setTimeout(() => {
       setScores({
         knowledge_accuracy: 10,
@@ -29,7 +50,7 @@ export default function EvaluatePage() {
       })
       setLoading(false)
     }, 1000)
-  }, [])
+  }
 
   const scoreCategories = [
     { 

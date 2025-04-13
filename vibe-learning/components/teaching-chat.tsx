@@ -20,6 +20,7 @@ type Message = {
 
 export interface TeachingChatHandle {
   handleAudioRecorded: (audioBlob: Blob, chatHistory: string[]) => Promise<void>;
+  getMessages: () => Message[];
 }
 
 export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<HTMLDivElement>>((props, ref) => {
@@ -89,7 +90,8 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
 
   // Expose the handleAudioRecorded method via ref
   useImperativeHandle(ref, () => ({
-    handleAudioRecorded
+    handleAudioRecorded,
+    getMessages: () => messages
   }));
 
   const handleSendMessage = (e: React.FormEvent) => {

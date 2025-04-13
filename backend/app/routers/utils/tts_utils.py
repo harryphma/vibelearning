@@ -328,6 +328,7 @@ def evaluate(chat_history_json: str) -> Dict[str, int]:
 
 
     # Convert to the format Gemini expects
+    print(f"chat_history_json: {chat_history_json}")
     formatted_messages = []
     
     # Add system prompt as a user message (Gemini doesn't have a system role)

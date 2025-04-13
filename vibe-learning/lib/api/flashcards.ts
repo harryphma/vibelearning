@@ -193,14 +193,12 @@ export async function evaluateChat(chatHistory: {role: string, content: string}[
   overall_score: number
 }> {
   try {
+    const formData = new FormData();
+    formData.append('chat_history_json', JSON.stringify(chatHistory));
+    
     const response = await fetch(`${API_URL}/tts/evaluate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_history_json: JSON.stringify(chatHistory)
-      }),
+      body: formData,
     });
     
     if (!response.ok) {
