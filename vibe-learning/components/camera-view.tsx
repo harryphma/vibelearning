@@ -39,6 +39,11 @@ export function CameraView({
     className
   );
 
+  // If camera is not active and not recording and no recording is ready, don't render anything
+  if (!isActive && !isRecording && !recordingReady) {
+    return null;
+  }
+
   return (
     <div ref={containerRef} className={containerClasses}>
       {isActive ? (
@@ -70,16 +75,7 @@ export function CameraView({
                 Recording ready to send
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <Camera className="h-12 w-12 opacity-20 text-muted-foreground" />
-              <div className="mt-2 text-sm text-muted-foreground">
-                {!activeTeachingDeck
-                  ? 'Select a teaching deck to enable recording'
-                  : 'Click the camera button to start video'}
-              </div>
-            </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>
