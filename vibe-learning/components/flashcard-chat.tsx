@@ -316,14 +316,17 @@ export function FlashcardChat({
 
   return (
     <div className={cn(
-      "flex flex-col h-full",
+      "flex flex-col h-full bg-gradient-to-br from-white to-indigo-50/20 rounded-lg border border-indigo-100",
       isFullPage && "max-w-4xl mx-auto"
     )}>
-      <div className="p-4 border-b">
-        <h2 className="font-semibold">
+      <div className="p-4 border-b border-indigo-100 bg-white">
+        <h2 className="font-semibold text-indigo-900 flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
+            <span className="text-white text-xs">AI</span>
+          </div>
           {isEditMode ? "Flashcard Editor" : "Flashcard Creator"}
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-indigo-600 mt-1">
           {isEditMode 
             ? "Chat with AI to edit and improve your flashcards" 
             : awaitingDeckName
@@ -334,25 +337,41 @@ export function FlashcardChat({
       </div>
 
       <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div key={message.id} className={cn("flex", message.sender === "user" ? "justify-end" : "justify-start")}>
+        <div className="space-y-4 pb-1">
+          {messages.map((message, index) => (
+            <div 
+              key={message.id} 
+              className={cn(
+                "flex", 
+                message.sender === "user" ? "justify-end" : "justify-start",
+                index === messages.length - 1 && !message.isLoading && "animate-appear"
+              )}
+            >
               <div
                 className={cn(
-                  "max-w-[80%] rounded-lg p-3",
-                  message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
+                  "max-w-[80%] rounded-2xl p-4 shadow-sm",
+                  message.sender === "user" 
+                    ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-br-none" 
+                    : "bg-gradient-to-r from-white to-indigo-50 text-gray-700 border border-indigo-100 rounded-bl-none",
                 )}
               >
                 {message.isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
+                  <div className="flex items-center space-x-2 py-1">
+                    <div className="w-2 h-2 rounded-full bg-current animate-pulse-dot1"></div>
+                    <div className="w-2 h-2 rounded-full bg-current animate-pulse-dot2"></div>
+                    <div className="w-2 h-2 rounded-full bg-current animate-pulse-dot3"></div>
                   </div>
                 ) : (
                   <>
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    <div className="mt-1 text-xs opacity-70">{formatTime(message.timestamp)}</div>
+                    <div className="mt-2 text-xs opacity-70 flex justify-between items-center">
+                      <span>{formatTime(message.timestamp)}</span>
+                      {message.hasFile && (
+                        <span className="flex items-center ml-2 bg-white/20 px-1.5 py-0.5 rounded text-[10px]">
+                          PDF
+                        </span>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -361,7 +380,7 @@ export function FlashcardChat({
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t">
+      <div className="p-4 border-t border-indigo-100 bg-gradient-to-b from-white to-indigo-50/30">
         <ChatInput
           onSendMessage={handleSendMessage}
           isDisabled={isAiResponding}
