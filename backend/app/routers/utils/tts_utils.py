@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import typing_extensions as typing
 import json
+from openai import OpenAI
 
 # Set up logger
 logger = logging.getLogger("tts_utils")
@@ -23,7 +24,7 @@ logger.addHandler(handler)
 
 async def generate_speech_from_text(text: str, language: str = "en") -> BinaryIO:
     """
-    Generate speech audio from text using Google Text-to-Speech
+    Generate speech audio from text using OpenAI Text-to-Speech
     
     Args:
         text: The text to convert to speech
@@ -33,11 +34,22 @@ async def generate_speech_from_text(text: str, language: str = "en") -> BinaryIO
         An audio file object
     """
     try:
+        # Load OpenAI API key from environment
+        load_dotenv()
+        
+        # Initialize OpenAI client
+        client = OpenAI()
+        
         # Create a temporary file to store the audio
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
-            # Generate speech
-            tts = gTTS(text=text, lang=language)
-            tts.save(temp_file.name)
+            # Generate speech using OpenAI
+            with client.audio.speech.with_streaming_response.create(
+                model="gpt-4o-mini-tts",
+                voice="coral",
+                input=text,
+                instructions="Speak in a pick-me-girl tone."
+            ) as response:
+                response.stream_to_file(temp_file.name)
             
             # Return the file object
             return open(temp_file.name, 'rb')
