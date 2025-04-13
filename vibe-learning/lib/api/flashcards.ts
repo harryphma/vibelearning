@@ -2,6 +2,10 @@ import { FlashcardData } from "@/data/mock-flashcards";
 
 // API URL - default to localhost if not provided in env
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+interface LLMResponseResult {
+  response: string;
+  transcribed_text: string;
+}
 
 /**
  * Generate flashcards from a subject using the AI
@@ -104,6 +108,45 @@ export async function editFlashcards(
     return processCards(cards);
   } catch (error) {
     console.error("Error editing flashcards:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generate an LLM response based on audio input and chat history
+ * 
+ * @param audioBlob The audio blob containing the user's spoken message
+ * @param chatHistory The current chat history
+ * @param languageCode The language code for speech recognition (default: "en-US")
+ * @returns Object containing the LLM response and transcribed text
+ */
+export async function generateLLMResponse(
+  audioBlob: Blob,
+  chatHistory: string[],
+  languageCode = "en-US"
+): Promise<LLMResponseResult> {
+  const audioFile = new File(
+    [audioBlob],
+    `audio-${Date.now()}.webm`, 
+    { type: audioBlob.type || "audio/webm" }
+  );
+  const formData = new FormData();
+  formData.append('audio', audioFile);
+  formData.append('chat_history_json', JSON.stringify(chatHistory));
+  formData.append('language_code', languageCode);
+
+  try {
+    const response = await fetch(`${API_URL}/tts/generate_llm_response`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    const result: LLMResponseResult = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error generating LLM response:", error);
     throw error;
   }
 }

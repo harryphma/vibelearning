@@ -4,11 +4,13 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { FlashcardDeck, FlashcardData } from "@/data/mock-flashcards"
 import { ChatInput } from "@/components/chat-input"
 import { useFlashcardStore, Message } from "@/store/flashcard-store"
 import { editFlashcards, generateFlashcards, generateFlashcardsFromPDF } from "@/lib/api/flashcards"
+import { useRouter } from "next/navigation"
 
 interface FlashcardChatProps {
   onNewDeckCreated?: (deck: FlashcardDeck) => void;
@@ -23,6 +25,8 @@ export function FlashcardChat({
   isEditMode = false,
   isFullPage = false
 }: FlashcardChatProps) {
+  const router = useRouter();
+
   // Use the Zustand store for deck-specific flashcards and messages
   const { 
     setDeckFlashcards,
@@ -33,7 +37,8 @@ export function FlashcardChat({
     // Add message-related methods
     getDeckMessages,
     addMessageToDeck,
-    setDeckMessages
+    setDeckMessages,
+    setActiveTeachingDeck
   } = useFlashcardStore();
 
   // Initialize messages state from Zustand store if a deck is selected
@@ -81,8 +86,8 @@ export function FlashcardChat({
       }
       
       // Update deckFlashcards in the store when selecting a deck to edit
-      if (selectedDeck.flashcards) {
-        setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards);
+      if (selectedDeck.cards) {
+        setDeckFlashcards(selectedDeck.id, selectedDeck.cards);
       }
     } else if (!isEditMode && !selectedDeck) {
       // Reset messages for creating a new deck
@@ -245,13 +250,13 @@ export function FlashcardChat({
           setDeckFlashcards(selectedDeck.id, updatedCards);
           
           // Also update the actual deck in the store
-          updateDeck(selectedDeck.id, { flashcards: updatedCards });
+          updateDeck(selectedDeck.id, { cards: updatedCards });
           
           // For backward compatibility with the props pattern
           if (onNewDeckCreated) {
             onNewDeckCreated({
               ...selectedDeck,
-              flashcards: updatedCards
+              cards: updatedCards
             });
           }
 
@@ -325,26 +330,61 @@ export function FlashcardChat({
     }
   }
 
+  const handleTeach = () => {
+    if (!selectedDeck) return;
+    
+    // Get the latest flashcards from the store or the deck
+    const flashcardsToUse = getDeckFlashcards(selectedDeck.id);
+    
+    // Create a complete deck with the latest flashcards
+    const deckToTeach = {
+      ...selectedDeck,
+      flashcards: flashcardsToUse && flashcardsToUse.length > 0 
+        ? flashcardsToUse 
+        : selectedDeck.cards || []
+    };
+    
+    // Set as active teaching deck and navigate
+    setActiveTeachingDeck(deckToTeach);
+    console.log("Teaching deck:", deckToTeach);
+    console.log("Teaching flashcards:", flashcardsToUse);
+    router.push("/teach");
+  }
+
   return (
     <div className={cn(
       "flex flex-col h-full bg-gradient-to-br from-white to-indigo-50/20 rounded-lg border border-indigo-100",
       isFullPage && "max-w-4xl mx-auto"
     )}>
-      <div className="p-4 border-b border-indigo-100 bg-white">
-        <h2 className="font-semibold text-indigo-900 flex items-center gap-2">
-          <div className="w-5 h-5 rounded-md bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
-            <span className="text-white text-xs">AI</span>
-          </div>
-          {isEditMode ? "Flashcard Editor" : "Flashcard Creator"}
-        </h2>
-        <p className="text-sm text-indigo-600 mt-1">
-          {isEditMode 
-            ? "Chat with AI to edit and improve your flashcards" 
-            : awaitingDeckName
-              ? "Please provide a name for your flashcard deck"
-              : "Chat with AI to create new flashcard decks or upload a PDF"
-          }
-        </p>
+      <div className="p-4 border-b border-indigo-100 bg-white flex justify-between items-center">
+        <div>
+          <h2 className="font-semibold text-indigo-900 flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
+              <span className="text-white text-xs">AI</span>
+            </div>
+            {isEditMode ? "Flashcard Editor" : "Flashcard Creator"}
+          </h2>
+          <p className="text-sm text-indigo-600 mt-1">
+            {isEditMode 
+              ? "Chat with AI to edit and improve your flashcards" 
+              : awaitingDeckName
+                ? "Please provide a name for your flashcard deck"
+                : "Chat with AI to create new flashcard decks or upload a PDF"
+            }
+          </p>
+        </div>
+        
+        {/* Teach button properly positioned in the header */}
+        {selectedDeck && ((selectedDeck.cards && selectedDeck.cards.length > 0) || 
+                          (getDeckFlashcards(selectedDeck.id) && 
+                           getDeckFlashcards(selectedDeck.id).length > 0)) && (
+          <Button 
+            onClick={handleTeach}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700"
+          >
+            Teach with these cards
+          </Button>
+        )}
       </div>
 
       <ScrollArea className="flex-1 p-4">
@@ -409,9 +449,16 @@ export function FlashcardChat({
   )
 }
 
-function formatTime(date: Date): string {
+function formatTime(date: Date | string): string {
+  const dateObject = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if date is valid before formatting
+  if (isNaN(dateObject.getTime())) {
+    return 'Invalid date';
+  }
+  
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "numeric",
-  }).format(date)
+  }).format(dateObject);
 }

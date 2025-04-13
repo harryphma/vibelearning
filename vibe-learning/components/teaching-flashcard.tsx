@@ -4,26 +4,26 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { ChevronLeft, ChevronRight, RotateCw, Sparkles, Lightbulb } from "lucide-react"
+import { ChevronLeft, ChevronRight, RotateCw, Sparkles, Lightbulb, BookOpen } from "lucide-react"
+import { useFlashcardStore } from "@/store/flashcard-store"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function TeachingFlashcard() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [showAnimation, setShowAnimation] = useState(false)
-
-  const flashcards = [
-    {
-      id: "1",
-      question: "What is photosynthesis?",
-      answer:
-        "Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize nutrients from carbon dioxide and water. Photosynthesis in plants generally involves the green pigment chlorophyll and generates oxygen as a by-product.",
-    },
-    {
-      id: "2",
-      question: "What are the main components needed for photosynthesis?",
-      answer: "Sunlight, water, carbon dioxide, and chlorophyll.",
-    },
-  ]
+  
+  const decks = useFlashcardStore((state) => state.decks)
+  const activeTeachingDeck = useFlashcardStore((state) => state.activeTeachingDeck)
+  const setActiveTeachingDeck = useFlashcardStore((state) => state.setActiveTeachingDeck)
+  
+  // Get flashcards for the active deck
+  const flashcards = activeTeachingDeck?.flashcards || []
 
   // Initial animation
   useEffect(() => {
@@ -31,8 +31,18 @@ export function TeachingFlashcard() {
     const timer = setTimeout(() => setShowAnimation(false), 800);
     return () => clearTimeout(timer);
   }, []);
+  
+  // Reset card index when changing decks
+  useEffect(() => {
+    setCurrentCardIndex(0)
+    setIsFlipped(false)
+  }, [activeTeachingDeck])
 
-  const currentCard = flashcards[currentCardIndex]
+  const currentCard = flashcards[currentCardIndex] || {
+    id: "empty",
+    question: "No flashcard available",
+    answer: "Please select a teaching deck"
+  }
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped)
@@ -51,6 +61,10 @@ export function TeachingFlashcard() {
       setIsFlipped(false)
     }
   }
+  
+  const handleSelectDeck = (deck) => {
+    setActiveTeachingDeck(deck)
+  }
 
   return (
     <Card className={cn(
@@ -61,14 +75,48 @@ export function TeachingFlashcard() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg text-indigo-900 flex items-center gap-2">
             <Lightbulb className="h-4 w-4 text-purple-500" />
-            Current Flashcard
+            {activeTeachingDeck ? (
+              <span className="truncate max-w-[150px]" title={activeTeachingDeck.title}>
+                {activeTeachingDeck.title}
+              </span>
+            ) : (
+              "Select a Deck"
+            )}
           </CardTitle>
-          <div className="text-sm text-purple-600 font-medium flex items-center gap-2">
-            Card {currentCardIndex + 1} of {flashcards.length}
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-purple-500"></span>
-            </span>
+          
+          <div className="flex items-center gap-2">
+            {flashcards.length > 0 && (
+              <div className="text-sm text-purple-600 font-medium">
+                {currentCardIndex + 1} of {flashcards.length}
+              </div>
+            )}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="border-indigo-200 hover:bg-indigo-50">
+                  <BookOpen className="h-4 w-4 mr-1" />
+                  Decks
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {decks.length === 0 ? (
+                  <DropdownMenuItem disabled>No decks available</DropdownMenuItem>
+                ) : (
+                  decks.map((deck) => (
+                    <DropdownMenuItem
+                      key={deck.id}
+                      onClick={() => handleSelectDeck(deck)}
+                      className={cn(
+                        "cursor-pointer",
+                        activeTeachingDeck?.id === deck.id && "bg-indigo-50 text-indigo-700"
+                      )}
+                    >
+                      {deck.title}
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
@@ -123,7 +171,7 @@ export function TeachingFlashcard() {
               variant="outline" 
               size="icon" 
               onClick={handlePrevious} 
-              disabled={currentCardIndex === 0}
+              disabled={currentCardIndex === 0 || flashcards.length === 0}
               className="rounded-full border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 transition-all"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -133,6 +181,7 @@ export function TeachingFlashcard() {
             <Button 
               variant="outline" 
               onClick={handleFlip}
+              disabled={flashcards.length === 0}
               className="bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border-indigo-200 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 hover:border-indigo-300 transition-all"
             >
               <RotateCw className="h-4 w-4 mr-2" />
@@ -143,7 +192,7 @@ export function TeachingFlashcard() {
               variant="outline"
               size="icon"
               onClick={handleNext}
-              disabled={currentCardIndex === flashcards.length - 1}
+              disabled={currentCardIndex === flashcards.length - 1 || flashcards.length === 0}
               className="rounded-full border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 transition-all"
             >
               <ChevronRight className="h-4 w-4" />
