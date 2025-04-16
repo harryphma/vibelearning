@@ -1,0 +1,15 @@
+venv/
+pycache/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.git
+.gitignore
+.DS_Store
+.vscode
+.idea
+.pytest_cache
+.ruff_cache
+tts_credentials.json
