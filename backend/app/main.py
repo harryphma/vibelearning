@@ -4,7 +4,7 @@ from app.routers.tts import router as tts_router
 from app.routers.gemini import router as gemini_router
 from starlette.middleware.sessions import SessionMiddleware
 import secrets
-
+from mangum import Mangum
 
 app = FastAPI()
 
@@ -21,6 +21,9 @@ app.include_router(gemini_router, prefix="/api")
 def root():
     return {"message": "Hello World hehe"}
 
+@app.get("/test")
+def test():
+    return {"message": "Hello World hehe test"}
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,8 +34,5 @@ app.add_middleware(
 )
 
 
-
-
-
-
+handler = Mangum(app)
 

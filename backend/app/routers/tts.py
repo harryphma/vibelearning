@@ -100,7 +100,6 @@ async def generate_llm_response(
         
         # Parse the JSON string into a list of message dictionaries
         chat_history = json.loads(chat_history_json)
-        print("chat_history: ", type(chat_history), chat_history[0], type(chat_history[0]))
         chat_history = [json.loads(message) for message in chat_history]
         # Validate that chat_history is an array
         if not isinstance(chat_history, list):

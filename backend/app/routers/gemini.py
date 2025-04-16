@@ -11,6 +11,9 @@ router = APIRouter(
     tags=["gemini"],
 )
 
+@router.post("/testpost")
+def testpost(input: str):
+    return {"message": input}
 
 @router.post("/auto")
 async def auto_generate(request: Request, file: UploadFile):

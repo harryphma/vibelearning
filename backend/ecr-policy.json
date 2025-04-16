@@ -1,0 +1,19 @@
+{
+    "Version": "2008-10-17",
+    "Statement": [
+      {
+        "Sid": "AllowCrossAccountPush",
+        "Effect": "Allow",
+        "Principal": {
+          "AWS": "arn:aws:493332739725:user/dlinhwork31"
+        },
+        "Action": [
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
+        ]
+      }
+    ]
+  }
+  

@@ -1,4 +1,10 @@
+google-api-core
+google-auth
+google-cloud
+google-cloud-core
 google-cloud-texttospeech
+google-cloud-speech
+google-api-python-client
 dotenv
 pypdf
 google-generativeai
@@ -10,4 +16,8 @@ gtts
 itsdangerous
 python-multipart
 openai
-google-cloud-speech
+pydantic
+starlette
+typing-extensions
+mangum
+
