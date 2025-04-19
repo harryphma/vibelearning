@@ -3,12 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Brain, Check } from 'lucide-react';
-
+import PublicHeader from '../../components/PublicHeader';
 import { Button } from '@/components/ui/button';
 
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col">
+      <PublicHeader />
       <main className="flex-1">
         {/* Hero Section */}
         <section className="bg-gradient-to-br from-blue-50 via-white to-purple-50 py-20">
@@ -93,6 +94,11 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
+      <footer className="bg-gray-100 py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
+          <p>&copy; {new Date().getFullYear()} CogniFlow. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 } 

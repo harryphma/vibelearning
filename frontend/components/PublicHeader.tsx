@@ -14,7 +14,6 @@ export default function PublicHeader() {
     <header className="border-b border-gray-200 bg-white">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
               <div className="relative h-10 w-10 mr-2">
