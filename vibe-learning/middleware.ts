@@ -1,56 +1,78 @@
-//TO CHECK LOGIN WITH GOOGLE, USE BELOW CODE 
-
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Array of public routes that don't require authentication
 const publicRoutes = ['/auth/login', '/auth/callback']
 
 export async function middleware(request: NextRequest) {
-  // Allow public routes and static assets
+  const response = NextResponse.next()
+
+  // Allow public routes and static assets immediately
   if (publicRoutes.includes(request.nextUrl.pathname) || 
       request.nextUrl.pathname.startsWith('/_next') ||
       request.nextUrl.pathname.startsWith('/favicon.ico')) {
-    return NextResponse.next()
+    return response
   }
 
   try {
-    // Create a Supabase client configured to use cookies
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
-            return request.cookies.get(name)?.value
+            const cookie = request.cookies.get(name)
+            if (cookie?.value) {
+              console.log(`Found cookie in middleware: ${name}`)
+            }
+            return cookie?.value
           },
           set(name: string, value: string, options: CookieOptions) {
-            // We'll handle cookie setting in the actual redirect response
+            response.cookies.set({
+              name,
+              value,
+              domain: request.nextUrl.hostname,
+              path: '/',
+              maxAge: 60, // 1 minute
+              expires: new Date(Date.now() + 60 * 1000), // Also set explicit expiration
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax'
+            })
           },
           remove(name: string, options: CookieOptions) {
-            // We'll handle cookie removal in the actual redirect response
+            response.cookies.set({
+              name,
+              value: '',
+              path: '/',
+              expires: new Date(0)
+            })
           }
         }
       }
     )
 
-    // Get the session
     const { data: { session } } = await supabase.auth.getSession()
 
-    // If no session and trying to access protected route, redirect to login
-    if (!session && !publicRoutes.includes(request.nextUrl.pathname)) {
+    // Log the current state
+    console.log('Middleware check:', {
+      path: request.nextUrl.pathname,
+      hasSession: !!session,
+      cookies: request.cookies.getAll().map(c => c.name)
+    })
+
+    if (!session) {
+      // No session, redirect to login
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
 
-    // If has session and trying to access auth pages, redirect to main page
+    // Has session and trying to access auth pages
     if (session && request.nextUrl.pathname.startsWith('/auth')) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // Allow the request to proceed normally
-    return NextResponse.next()
+    return response
   } catch (error) {
-    console.error('Unexpected error in middleware:', error)
+    console.error('Middleware error:', error)
     // On error, redirect to login
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
@@ -61,23 +83,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 }
-
-
-//TO DO NORMAL CODE, USE BELOW CODE
-// import { createServerClient, type CookieOptions } from '@supabase/ssr'
-// import { NextResponse, type NextRequest } from 'next/server'
-
-// // Array of public routes that don't require authentication
-// const publicRoutes = ['/auth/login', '/auth/callback', '/flashcards', '/']
-
-// export async function middleware(request: NextRequest) {
-//   // Allow all routes for development/testing
-//   return NextResponse.next()
-// }
-
-// export const config = {
-//   matcher: [
-//     '/((?!_next/static|_next/image|favicon.ico|public).*)',
-//   ],
-// } 
-
