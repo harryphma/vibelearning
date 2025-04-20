@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -7,40 +8,54 @@ export async function GET(request: NextRequest) {
   
   // Create response first
   const response = NextResponse.redirect(new URL('/new', request.url))
-
+  const cookieStore = await cookies()
   // Create Supabase client with specific cookie handling
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
-          // Set cookie with specific domain and other options
-          response.cookies.set({
-            name,
-            value,
-            domain: request.nextUrl.hostname,
-            path: '/',
-            maxAge: 60, // 1 minute
-            expires: new Date(Date.now() + 60 * 1000), // Also set explicit expiration
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax'
-          })
-          console.log(`Cookie set in callback: ${name}`)
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
         },
-        remove(name: string, options: CookieOptions) {
-          response.cookies.set({
-            name,
-            value: '',
-            path: '/',
-            expires: new Date(0)
-          })
-          console.log(`Cookie removed in callback: ${name}`)
-        }
+        // get(name: string) {
+        //   return request.cookies.get(name)?.value
+        // },
+        // set(name: string, value: string, options: CookieOptions) {
+        //   // Set cookie with specific domain and other options
+        //   response.cookies.set({
+        //     name,
+        //     value,
+        //     domain: request.nextUrl.hostname,
+        //     path: '/',
+        //     maxAge: 60, // 1 minute
+        //     expires: new Date(Date.now() + 60 * 1000), // Also set explicit expiration
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === 'production',
+        //     sameSite: 'lax'
+        //   })
+        //   console.log(`Cookie set in callback: ${name}`)
+        // },
+        // remove(name: string, options: CookieOptions) {
+        //   response.cookies.set({
+        //     name,
+        //     value: '',
+        //     path: '/',
+        //     expires: new Date(0)
+        //   })
+        //   console.log(`Cookie removed in callback: ${name}`)
+        // }
       }
     }
   )

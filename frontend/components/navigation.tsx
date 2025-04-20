@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { BookOpen, Brain, Home, Settings, User } from 'lucide-react';
+import { BookOpen, Brain, Home} from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export function Navigation() {
   const routes = [
     {
       name: 'Home',
-      path: '/',
+      path: '/new',
       icon: <Home className="h-5 w-5" />,
     },
     {
@@ -42,10 +42,10 @@ export function Navigation() {
   return (
     <header className="border-b">
       <div className="flex h-16 items-center px-4 md:px-6">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <BookOpen className="text-primary h-6 w-6" />
           <span className="text-xl font-bold">CogniFlow</span>
-        </div>
+        </Link>
         <nav className="ml-auto flex items-center gap-4 md:gap-6">
           <div className="hidden items-center gap-6 md:flex">
             {routes.map(route => (

@@ -5,11 +5,26 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, Brain, Check } from 'lucide-react';
 import PublicHeader from '../../components/PublicHeader';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/client';
 
 export default function LandingPage() {
+  const supabase = createClient();
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      console.log(user);
+    };
+    fetchUser();
+    
+  }, []);
   return (
     <div className="flex min-h-screen flex-col">
-      <PublicHeader />
+      <PublicHeader user={user} />
       <main className="flex-1">
         {/* Hero Section */}
         <section className="bg-gradient-to-br from-blue-50 via-white to-purple-50 py-20">
@@ -37,7 +52,7 @@ export default function LandingPage() {
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700"
                 asChild
               >
-                <Link href="/auth/login">
+                <Link href="/new">
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

@@ -2,12 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { User } from '@supabase/supabase-js';
+import AuthButtons from './AuthButtons';
 
-import { Button } from '@/components/ui/button';
-
-export default function PublicHeader() {
+export default function PublicHeader({ user }: { user: User | null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -43,13 +43,7 @@ export default function PublicHeader() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex">
-            <Button
-              size="sm"
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700"
-              asChild
-            >
-              <Link href="/auth/login">Log In</Link>
-            </Button>
+            <AuthButtons user={user} />
           </div>
 
           {/* Mobile menu button */}
@@ -91,15 +85,11 @@ export default function PublicHeader() {
               About
             </Link>
             <div className="mt-4 py-2">
-              <Button
-                size="sm"
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700"
-                asChild
-              >
-                <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                  Log In
-                </Link>
-              </Button>
+              <AuthButtons 
+                user={user} 
+                variant="mobile" 
+                onAction={() => setMobileMenuOpen(false)} 
+              />
             </div>
           </div>
         </div>
