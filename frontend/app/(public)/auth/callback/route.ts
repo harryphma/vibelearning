@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code')
   
   // Create response first
-  const response = NextResponse.redirect(new URL('/', request.url))
+  const response = NextResponse.redirect(new URL('/new', request.url))
 
   // Create Supabase client with specific cookie handling
   const supabase = createServerClient(

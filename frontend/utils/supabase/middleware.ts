@@ -33,21 +33,6 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: DO NOT REMOVE auth.getUser()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:
@@ -61,5 +46,30 @@ export async function updateSession(request: NextRequest) {
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely!
 
-  return supabaseResponse
+  try {
+    // Get current path
+    const path = request.nextUrl.pathname
+    // For protected routes, verify user
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // If user is NOT authenticated
+    if (!user) {
+      // Allow access only to public routes as default
+      if (path.startsWith('/auth') || path === '/') {
+        return supabaseResponse
+      }
+      // Redirect to login for all other routes if not authenticated
+      return NextResponse.redirect(new URL('/auth/login', request.url))
+    }
+    
+    // User is authenticated, allow access to protected route
+    return supabaseResponse
+
+  } catch (error) {
+    console.error('Unexpected middleware error:', error)
+    // For unexpected errors, redirect to login
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    return NextResponse.redirect(url)
+  }
 }
