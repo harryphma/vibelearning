@@ -9,3 +9,5 @@ tts_credentials.json
 **/__pycache__/
 **/app/__pycache__/
 *.py[cod]
+# Python cache files and directories
+__pycache__/

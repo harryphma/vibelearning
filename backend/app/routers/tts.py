@@ -8,7 +8,7 @@ import sys
 import json
 from pydantic import BaseModel
 # Import utility functions
-from app.routers.utils.tts_utils import generate_speech_from_text, transcribe_speech_from_audio, llm_learner_response, evaluate
+from app.utils.tts_utils import generate_speech_from_text, transcribe_speech_from_audio, llm_learner_response, evaluate
 
 # Set up logger
 logger = logging.getLogger("tts_router")

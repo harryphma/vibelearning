@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 import os
 import tempfile
 import json
-from app.utils import generate_cards, parsePDF_to_text, topic_selection, edit_flashcards
+from app.utils.gemini_utils import generate_cards, parsePDF_to_text, topic_selection, edit_flashcards
 from typing import List, Dict, Any, Optional
 
 router = APIRouter(
