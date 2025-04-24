@@ -1,5 +1,6 @@
+'use server';
 import { FlashcardData } from '@/data/mock-flashcards';
-
+import { createClient } from '@/utils/supabase/server';
 // API URL - default to localhost if not provided in env
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 interface LLMResponseResult {
@@ -7,6 +8,14 @@ interface LLMResponseResult {
   transcribed_text: string;
 }
 
+const getSession = async () => {
+  const supabase = await createClient();
+  const session = await supabase.auth.getSession();
+  if (!session.data.session?.access_token) {
+    throw new Error('No session found');
+  }
+  return session.data.session?.access_token;
+}
 /**
  * Generate flashcards from a subject using the AI
  *
@@ -14,6 +23,7 @@ interface LLMResponseResult {
  * @returns Array of FlashcardData
  */
 export async function generateFlashcards(subject: string): Promise<FlashcardData[]> {
+  const sessionToken = await getSession();
   const formData = new FormData();
   formData.append('subject', subject.trim());
 
@@ -21,6 +31,9 @@ export async function generateFlashcards(subject: string): Promise<FlashcardData
     const response = await fetch(`${API_URL}/gemini/manual`, {
       method: 'POST',
       body: formData,
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+      },
     });
 
     if (!response.ok) {
@@ -44,10 +57,14 @@ export async function generateFlashcards(subject: string): Promise<FlashcardData
 export async function generateFlashcardsFromPDF(file: File): Promise<FlashcardData[]> {
   const formData = new FormData();
   formData.append('file', file);
+  const sessionToken = await getSession();
 
   try {
     const response = await fetch(`${API_URL}/gemini/auto`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+      },
       body: formData,
     });
 
@@ -81,6 +98,7 @@ export async function editFlashcards(
   userInput: string,
   existingCards: FlashcardData[]
 ): Promise<FlashcardData[]> {
+  const sessionToken = await getSession();
   try {
     const formData = new FormData();
     formData.append('user_input', userInput.trim());
@@ -91,6 +109,9 @@ export async function editFlashcards(
 
     const response = await fetch(`${API_URL}/gemini/edit`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+      },
       body: formData,
     });
 
@@ -125,6 +146,7 @@ export async function generateLLMResponse(
   chatHistory: string[],
   languageCode = 'en-US'
 ): Promise<LLMResponseResult> {
+  const sessionToken = await getSession();
   const audioFile = new File([audioBlob], `audio-${Date.now()}.webm`, {
     type: audioBlob.type || 'audio/webm',
   });
@@ -136,6 +158,9 @@ export async function generateLLMResponse(
   try {
     const response = await fetch(`${API_URL}/tts/generate_llm_response`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+      },
       body: formData,
     });
     if (!response.ok) {
@@ -190,12 +215,16 @@ export async function evaluateChat(chatHistory: { role: string; content: string 
   intuitiveness: number;
   overall_score: number;
 }> {
+  const sessionToken = await getSession();
   try {
     const formData = new FormData();
     formData.append('chat_history_json', JSON.stringify(chatHistory));
 
     const response = await fetch(`${API_URL}/tts/evaluate`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+      },
       body: formData,
     });
 

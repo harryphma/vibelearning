@@ -1,13 +1,17 @@
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, status, Request, Header
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
 from typing import Optional
 import os
 from supabase import create_client, Client
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Initialize Supabase client
-supabase_url = os.environ.get("SUPABASE_URL")
-supabase_key = os.environ.get("SUPABASE_ANON_KEY")
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 # Security utilities
@@ -35,3 +39,17 @@ async def get_current_user(request: Request, credentials: HTTPAuthorizationCrede
         return user
     except JWTError:
         raise credentials_exception
+
+async def get_optional_user(authorization: Optional[str] = Header(None)):
+    """Optional authentication - doesn't require auth but provides user if available"""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    
+    try:
+        token = authorization.replace("Bearer ", "")
+        user = supabase.auth.get_user(token)
+        if user and user.user:
+            return user.user
+        return None
+    except Exception:
+        return None

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, HTTPException, Form, Request, Depends, Body
 from typing import Optional, List, Dict, Any
+from app.utils.auth_utils import get_current_user
 import os
 import tempfile
 import json
@@ -9,6 +10,7 @@ from typing import List, Dict, Any, Optional
 router = APIRouter(
     prefix="/gemini",
     tags=["gemini"],
+    dependencies=[Depends(get_current_user)]
 )
 
 
