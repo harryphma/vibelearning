@@ -51,8 +51,8 @@ export async function updateSession(request: NextRequest) {
     const path = request.nextUrl.pathname
     // For protected routes, verify user
     const { data: { user } } = await supabase.auth.getUser()
-    const {data} = await supabase.auth.getSession()
-    console.log(data.session?.access_token)
+    // const {data} = await supabase.auth.getSession()
+    // console.log(data.session?.access_token)
 
     // If user is NOT authenticated
     if (!user) {
