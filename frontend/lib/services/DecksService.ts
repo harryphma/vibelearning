@@ -1,5 +1,5 @@
-import { Deck, Flashcard } from '@/types/types'
 import { supabase } from '@/lib/supabase'
+import { Deck, Flashcard } from '@/types/types'
 
 class DecksService {
   async getAllDecks(): Promise<Deck[]> {
@@ -78,4 +78,4 @@ class DecksService {
   }
 }
 
-export const decksService = new DecksService() 
+export const decksService = new DecksService()

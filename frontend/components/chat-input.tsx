@@ -1,20 +1,19 @@
-'use client';
+'use client'
 
-import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import type React from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { FileText, Paperclip, Send, X } from 'lucide-react';
+import { FileText, Paperclip, Send, X } from 'lucide-react'
 
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
 interface ChatInputProps {
-  onSendMessage: (message: string, file?: File | null) => void;
-  isDisabled?: boolean;
-  placeholder?: string;
-  minHeight?: string;
+  onSendMessage: (message: string, file?: File | null) => void
+  isDisabled?: boolean
+  placeholder?: string
+  minHeight?: string
 }
 
 export function ChatInput({
@@ -23,53 +22,53 @@ export function ChatInput({
   placeholder = 'Ask anything or describe what you want to learn...',
   minHeight = '60px',
 }: ChatInputProps) {
-  const [input, setInput] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [input, setInput] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto-resize textarea on input change
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 240)}px`;
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 240)}px`
     }
-  }, [input]);
+  }, [input])
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if ((input.trim() || selectedFile) && !isDisabled) {
-      setIsAnimating(true);
-      setTimeout(() => setIsAnimating(false), 500);
+      setIsAnimating(true)
+      setTimeout(() => setIsAnimating(false), 500)
 
-      onSendMessage(input, selectedFile);
-      setInput('');
-      setSelectedFile(null);
+      onSendMessage(input, selectedFile)
+      setInput('')
+      setSelectedFile(null)
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = ''
       }
     }
-  };
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      setSelectedFile(e.target.files[0])
     }
-  };
+  }
 
   const handleOpenFileDialog = () => {
     if (fileInputRef.current) {
-      fileInputRef.current.click();
+      fileInputRef.current.click()
     }
-  };
+  }
 
   const handleRemoveFile = () => {
-    setSelectedFile(null);
+    setSelectedFile(null)
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ''
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit} className="relative">
@@ -121,8 +120,8 @@ export function ChatInput({
           )}
           onKeyDown={e => {
             if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
+              e.preventDefault()
+              handleSubmit(e)
             }
           }}
           disabled={isDisabled}
@@ -157,5 +156,5 @@ export function ChatInput({
         </div>
       </div>
     </form>
-  );
+  )
 }

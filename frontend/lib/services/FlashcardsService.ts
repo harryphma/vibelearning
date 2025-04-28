@@ -1,5 +1,5 @@
-import { Flashcard } from '@/types/types'
 import { supabase } from '@/lib/supabase'
+import { Flashcard } from '@/types/types'
 
 class FlashcardsService {
   async getAllFlashcards(): Promise<Flashcard[]> {
@@ -47,11 +47,8 @@ class FlashcardsService {
 
   async createMultipleFlashcards(flashcards: Partial<Flashcard>[]): Promise<Flashcard[]> {
     if (!flashcards.length) return []
-    
-    const { data, error } = await supabase
-      .from('flashcards')
-      .insert(flashcards)
-      .select()
+
+    const { data, error } = await supabase.from('flashcards').insert(flashcards).select()
 
     if (error) throw error
     return data
@@ -73,22 +70,16 @@ class FlashcardsService {
   }
 
   async deleteFlashcard(flashcardId: string): Promise<void> {
-    const { error } = await supabase
-      .from('flashcards')
-      .delete()
-      .eq('id', flashcardId)
+    const { error } = await supabase.from('flashcards').delete().eq('id', flashcardId)
 
     if (error) throw error
   }
 
   async deleteFlashcardsByDeck(deckId: string): Promise<void> {
-    const { error } = await supabase
-      .from('flashcards')
-      .delete()
-      .eq('deck_id', deckId)
+    const { error } = await supabase.from('flashcards').delete().eq('deck_id', deckId)
 
     if (error) throw error
   }
 }
 
-export const flashcardsService = new FlashcardsService() 
+export const flashcardsService = new FlashcardsService()

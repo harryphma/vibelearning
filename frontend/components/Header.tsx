@@ -1,8 +1,8 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
+import Link from 'next/link'
 
-import UserProfile from './UserProfile';
+import UserProfile from './UserProfile'
 
 export default function Header() {
   return (
@@ -18,5 +18,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  );
+  )
 }

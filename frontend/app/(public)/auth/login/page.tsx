@@ -1,16 +1,15 @@
-'use client';
+'use client'
 
-import { createBrowserClient } from '@supabase/ssr';
-import Image from 'next/image';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { createBrowserClient } from '@supabase/ssr'
+import { ArrowLeft } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
 
 export default function LoginPage() {
-  
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  )
 
   const handleGoogleSignIn = async () => {
     try {
@@ -23,15 +22,15 @@ export default function LoginPage() {
             prompt: 'consent',
           },
         },
-      });
+      })
 
       if (error) {
-        console.error('OAuth error:', error);
+        console.error('OAuth error:', error)
       }
     } catch (error) {
-      console.error('Error signing in with Google:', error);
+      console.error('Error signing in with Google:', error)
     }
-  };
+  }
 
   return (
     <div className="flex min-h-[calc(100vh-200px)] items-center justify-center px-4 py-12">
@@ -49,9 +48,11 @@ export default function LoginPage() {
             </div>
           </div>
           <h2 className="text-3xl font-bold tracking-tight">Welcome to CogniFlow</h2>
-          <p className="mt-2 text-sm text-blue-100">Sign in to access your interactive flashcards</p>
+          <p className="mt-2 text-sm text-blue-100">
+            Sign in to access your interactive flashcards
+          </p>
         </div>
-        
+
         <div className="px-6 py-8">
           <button
             onClick={handleGoogleSignIn}
@@ -77,7 +78,7 @@ export default function LoginPage() {
             </svg>
             Sign in with Google
           </button>
-          
+
           <div className="mt-6 text-center text-sm text-gray-500">
             <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -87,5 +88,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

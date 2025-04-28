@@ -1,16 +1,16 @@
 export interface FlashcardData {
-  id: string;
-  question: string;
-  answer: string;
+  id: string
+  question: string
+  answer: string
 }
 
 export interface FlashcardDeck {
-  id: string;
-  title: string;
-  subject: string;
-  description?: string;
-  flashcards: FlashcardData[];
-  createdAt: string;
+  id: string
+  title: string
+  subject: string
+  description?: string
+  flashcards: FlashcardData[]
+  createdAt: string
 }
 
 export const mockDecks: Record<string, FlashcardDeck> = {
@@ -143,27 +143,27 @@ export const mockDecks: Record<string, FlashcardDeck> = {
       },
     ],
   },
-};
+}
 
 // Function to search through decks by subject or title
 export function searchDecks(query: string): FlashcardDeck | null {
-  const normalizedQuery = query.toLowerCase().trim();
+  const normalizedQuery = query.toLowerCase().trim()
 
   // Direct match by key
   if (mockDecks[normalizedQuery]) {
-    return mockDecks[normalizedQuery];
+    return mockDecks[normalizedQuery]
   }
 
   // Search by title or subject
   for (const key in mockDecks) {
-    const deck = mockDecks[key];
+    const deck = mockDecks[key]
     if (
       deck.title.toLowerCase().includes(normalizedQuery) ||
       deck.subject.toLowerCase().includes(normalizedQuery)
     ) {
-      return deck;
+      return deck
     }
   }
 
-  return null;
+  return null
 }

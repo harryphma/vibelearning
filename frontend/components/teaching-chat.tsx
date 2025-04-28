@@ -1,28 +1,27 @@
-'use client';
+'use client'
 
-import type React from 'react';
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import type React from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 
-import { useFlashcardStore } from '@/store/flashcard-store';
-import { Send } from 'lucide-react';
+import { Send } from 'lucide-react'
 
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-
-import { generateLLMResponse } from '@/lib/api/flashcards';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Textarea } from '@/components/ui/textarea'
+import { generateLLMResponse } from '@/lib/api/flashcards'
+import { cn } from '@/lib/utils'
+import { useFlashcardStore } from '@/store/flashcard-store'
 
 type Message = {
-  id: string;
-  content: string;
-  sender: 'user' | 'ai';
-  isLoading?: boolean;
-};
+  id: string
+  content: string
+  sender: 'user' | 'ai'
+  isLoading?: boolean
+}
 
 export interface TeachingChatHandle {
-  handleAudioRecorded: (audioBlob: Blob, chatHistory: string[]) => Promise<void>;
-  getMessages: () => Message[];
+  handleAudioRecorded: (audioBlob: Blob, chatHistory: string[]) => Promise<void>
+  getMessages: () => Message[]
 }
 
 export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<HTMLDivElement>>(
@@ -34,10 +33,10 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
           "Welcome to the teaching interface! Explain concepts as if you're teaching someone, and I'll provide feedback on your explanations.",
         sender: 'ai',
       },
-    ]);
-    const [input, setInput] = useState('');
-    const [isAiResponding, setIsAiResponding] = useState(false);
-    const activeTeachingDeck = useFlashcardStore(state => state.activeTeachingDeck);
+    ])
+    const [input, setInput] = useState('')
+    const [isAiResponding, setIsAiResponding] = useState(false)
+    const activeTeachingDeck = useFlashcardStore(state => state.activeTeachingDeck)
 
     // Function to handle audio recorded from WebcamView
     const handleAudioRecorded = async (audioBlob: Blob, chatHistory: string[]) => {
@@ -48,39 +47,39 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
           content: 'Processing your teaching...',
           sender: 'ai',
           isLoading: true,
-        };
+        }
 
-        setMessages(prev => [...prev, loadingMessage]);
-        setIsAiResponding(true);
+        setMessages(prev => [...prev, loadingMessage])
+        setIsAiResponding(true)
 
         // Call API to generate response based on audio
-        const result = await generateLLMResponse(audioBlob, chatHistory);
+        const result = await generateLLMResponse(audioBlob, chatHistory)
 
         // Add the transcription as a user message
         const userMessage: Message = {
           id: `user-${Date.now()}`,
           content: result.transcribed_text,
           sender: 'user',
-        };
+        }
 
         // Add the AI response
         const aiMessage: Message = {
           id: `ai-${Date.now()}`,
           content: result.response,
           sender: 'ai',
-        };
+        }
 
         // Remove loading message and add user and AI messages
         setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
-          return [...filteredMessages, userMessage, aiMessage];
-        });
+          const filteredMessages = prev.filter(msg => !msg.isLoading)
+          return [...filteredMessages, userMessage, aiMessage]
+        })
       } catch (error) {
-        console.error('Error processing audio:', error);
+        console.error('Error processing audio:', error)
 
         // Remove loading message and add error message
         setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
+          const filteredMessages = prev.filter(msg => !msg.isLoading)
           return [
             ...filteredMessages,
             {
@@ -88,48 +87,48 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
               content: 'Sorry, there was an error processing your teaching. Please try again.',
               sender: 'ai',
             },
-          ];
-        });
+          ]
+        })
       } finally {
-        setIsAiResponding(false);
+        setIsAiResponding(false)
       }
-    };
+    }
 
     // Expose the handleAudioRecorded method via ref
     useImperativeHandle(ref, () => ({
       handleAudioRecorded,
       getMessages: () => messages,
-    }));
+    }))
 
     const handleSendMessage = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!input.trim() || isAiResponding) return;
+      e.preventDefault()
+      if (!input.trim() || isAiResponding) return
 
       const userMessage: Message = {
         id: `user-${Date.now()}`,
         content: input,
         sender: 'user',
-      };
+      }
 
       const loadingMessage: Message = {
         id: `ai-loading-${Date.now()}`,
         content: 'Thinking...',
         sender: 'ai',
         isLoading: true,
-      };
+      }
 
-      setMessages([...messages, userMessage, loadingMessage]);
-      setInput('');
-      setIsAiResponding(true);
+      setMessages([...messages, userMessage, loadingMessage])
+      setInput('')
+      setIsAiResponding(true)
 
       // Simulate AI response
       setTimeout(() => {
         const aiResponse =
-          "I noticed you're explaining this concept clearly. Great job! You might want to consider adding a few more examples to illustrate the practical applications of this idea.";
+          "I noticed you're explaining this concept clearly. Great job! You might want to consider adding a few more examples to illustrate the practical applications of this idea."
 
         // Remove loading message and add real response
         setMessages(prev => {
-          const filteredMessages = prev.filter(msg => !msg.isLoading);
+          const filteredMessages = prev.filter(msg => !msg.isLoading)
           return [
             ...filteredMessages,
             {
@@ -137,12 +136,12 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
               content: aiResponse,
               sender: 'ai',
             },
-          ];
-        });
+          ]
+        })
 
-        setIsAiResponding(false);
-      }, 1500);
-    };
+        setIsAiResponding(false)
+      }, 1500)
+    }
 
     return (
       <div className="flex h-[85vh] flex-col overflow-hidden rounded-lg border">
@@ -161,7 +160,7 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
           )}
         </div>
 
-        <ScrollArea className="flex-1 p-4 overflow-y-auto max-h-[64vh]">
+        <ScrollArea className="max-h-[64vh] flex-1 overflow-y-auto p-4">
           <div className="space-y-4">
             {messages.map(message => (
               <div
@@ -199,8 +198,8 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
               disabled={isAiResponding}
               onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
+                  e.preventDefault()
+                  handleSendMessage(e)
                 }
               }}
             />
@@ -216,8 +215,8 @@ export const TeachingChat = forwardRef<TeachingChatHandle, React.HTMLAttributes<
           </form>
         </div>
       </div>
-    );
+    )
   }
-);
+)
 
-TeachingChat.displayName = 'TeachingChat';
+TeachingChat.displayName = 'TeachingChat'

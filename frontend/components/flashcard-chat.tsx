@@ -1,31 +1,24 @@
-'use client';
+'use client'
 
-import type React from 'react';
-import { useEffect, useState } from 'react';
+import type React from 'react'
+import { useEffect, useState } from 'react'
 
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'
 
-import { FlashcardData, FlashcardDeck } from '@/data/mock-flashcards';
-import { Message, useFlashcardStore } from '@/store/flashcard-store';
-
-import { ChatInput } from '@/components/chat-input';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-
-import {
-  editFlashcards,
-  generateFlashcards,
-  generateFlashcardsFromPDF,
-} from '@/lib/api/flashcards';
+import { ChatInput } from '@/components/chat-input'
+import { Button } from '@/components/ui/button'
+import { FlashcardData, FlashcardDeck } from '@/data/mock-flashcards'
+import { editFlashcards, generateFlashcards, generateFlashcardsFromPDF } from '@/lib/api/flashcards'
 import { decksService } from '@/lib/services/';
 import { flashcardsService } from '@/lib/services/';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'
+import { Message, useFlashcardStore } from '@/store/flashcard-store'
 import { Deck } from '@/types/types';
 interface FlashcardChatProps {
-  onNewDeckCreated?: (deck: FlashcardDeck) => void;
-  selectedDeck?: FlashcardDeck | null;
-  isEditMode?: boolean;
-  isFullPage?: boolean;
+  onNewDeckCreated?: (deck: FlashcardDeck) => void
+  selectedDeck?: FlashcardDeck | null
+  isEditMode?: boolean
+  isFullPage?: boolean
 }
 
 export function FlashcardChat({
@@ -34,7 +27,7 @@ export function FlashcardChat({
   isEditMode = false,
   isFullPage = false,
 }: FlashcardChatProps) {
-  const router = useRouter();
+  const router = useRouter()
 
   // Use the Zustand store for deck-specific flashcards and messages
   const {
@@ -48,14 +41,14 @@ export function FlashcardChat({
     addMessageToDeck,
     setDeckMessages,
     setActiveTeachingDeck,
-  } = useFlashcardStore();
+  } = useFlashcardStore()
 
   // Initialize messages state from Zustand store if a deck is selected
   const [messages, setMessages] = useState<Message[]>(() => {
     if (isEditMode && selectedDeck) {
-      const storedMessages = getDeckMessages(selectedDeck.id);
+      const storedMessages = getDeckMessages(selectedDeck.id)
       if (storedMessages.length > 0) {
-        return storedMessages;
+        return storedMessages
       }
     }
     return [
@@ -68,39 +61,39 @@ export function FlashcardChat({
         sender: 'ai',
         timestamp: new Date(),
       },
-    ];
-  });
+    ]
+  })
 
-  const [isAiResponding, setIsAiResponding] = useState(false);
-  const [awaitingDeckName, setAwaitingDeckName] = useState(false);
-  const [pendingFileCards, setPendingFileCards] = useState<FlashcardData[] | null>(null);
-  const [pendingSubject, setPendingSubject] = useState<string | null>(null);
+  const [isAiResponding, setIsAiResponding] = useState(false)
+  const [awaitingDeckName, setAwaitingDeckName] = useState(false)
+  const [pendingFileCards, setPendingFileCards] = useState<FlashcardData[] | null>(null)
+  const [pendingSubject, setPendingSubject] = useState<string | null>(null)
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   // Only initialize messages when first mounting or when switching to a new deck
   useEffect(() => {
     if (isEditMode && selectedDeck) {
-      const storedMessages = getDeckMessages(selectedDeck.id);
+      const storedMessages = getDeckMessages(selectedDeck.id)
 
       // Use stored messages if they exist, otherwise initialize with welcome message
       if (storedMessages.length > 0) {
-        setMessages(storedMessages);
+        setMessages(storedMessages)
       } else {
         const initialMessage = {
           id: `deck-${selectedDeck.id}`,
           content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
           sender: 'ai' as const,
           timestamp: new Date(),
-        };
+        }
 
-        setMessages([initialMessage]);
+        setMessages([initialMessage])
         // Save this initial message to the store
-        setDeckMessages(selectedDeck.id, [initialMessage]);
+        setDeckMessages(selectedDeck.id, [initialMessage])
       }
 
       // Update deckFlashcards in the store when selecting a deck to edit
       if (selectedDeck.flashcards) {
-        setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards);
+        setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards)
       }
     } else if (!isEditMode && !selectedDeck) {
       // Reset messages for creating a new deck
@@ -112,7 +105,7 @@ export function FlashcardChat({
           sender: 'ai',
           timestamp: new Date(),
         },
-      ]);
+      ])
     }
 
     setAwaitingDeckName(false);
@@ -123,16 +116,16 @@ export function FlashcardChat({
 
   // Function to update both local state and store messages
   const updateMessages = (newMessages: Message[], deckId?: string) => {
-    setMessages(newMessages);
+    setMessages(newMessages)
 
     // If in edit mode and we have a valid deck, save messages to store
     if (isEditMode && selectedDeck && deckId) {
-      setDeckMessages(deckId, newMessages);
+      setDeckMessages(deckId, newMessages)
     }
-  };
+  }
 
   const handleSendMessage = async (message: string, file: File | null = null) => {
-    if (isAiResponding) return;
+    if (isAiResponding) return
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -141,14 +134,14 @@ export function FlashcardChat({
       timestamp: new Date(),
       hasFile: !!file,
       fileName: file?.name,
-    };
+    }
 
-    const displayContent = file ? `${message ? message + ' ' : ''}[File: ${file.name}]` : message;
+    const displayContent = file ? `${message ? message + ' ' : ''}[File: ${file.name}]` : message
 
     const userDisplayMessage: Message = {
       ...userMessage,
       content: displayContent,
-    };
+    }
 
     const loadingMessage: Message = {
       id: `ai-loading-${Date.now()}`,
@@ -162,24 +155,24 @@ export function FlashcardChat({
       sender: 'ai',
       timestamp: new Date(),
       isLoading: true,
-    };
+    }
 
     // Update messages in both local state and store (if editing)
-    const updatedMessages = [...messages, userDisplayMessage, loadingMessage];
-    updateMessages(updatedMessages, selectedDeck?.id);
+    const updatedMessages = [...messages, userDisplayMessage, loadingMessage]
+    updateMessages(updatedMessages, selectedDeck?.id)
 
-    setIsAiResponding(true);
+    setIsAiResponding(true)
 
     try {
       if (awaitingDeckName && (pendingFileCards || pendingSubject)) {
         // User is providing a name for the deck
-        const deckName = message.trim();
-        const finalCards = pendingFileCards;
+        const deckName = message.trim()
+        const finalCards = pendingFileCards
 
         // ... existing deck creation code ...
 
         if (finalCards) {
-          const deckId = `deck-${Date.now()}`;
+          const deckId = `deck-${Date.now()}`
           const newDeck: FlashcardDeck = {
             id: deckId,
             title: deckName,
@@ -198,29 +191,29 @@ export function FlashcardChat({
           await decksService.createDeck(deck_new)
           
           // Store the deck and its flashcards in Zustand
-          addDeck(newDeck);
+          addDeck(newDeck)
 
           // Also call the onNewDeckCreated prop if provided (for compatibility)
           if (onNewDeckCreated) {
-            onNewDeckCreated(newDeck);
+            onNewDeckCreated(newDeck)
           }
 
-          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
+          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
           const responseMessage = {
             id: `ai-${Date.now()}`,
             content: `I've created your "${deckName}" deck with ${finalCards.length} flashcards. You can now start studying!`,
             sender: 'ai' as const,
             timestamp: new Date(),
-          };
+          }
 
-          const finalMessages = [...filteredMessages, responseMessage];
-          updateMessages(finalMessages, deckId);
+          const finalMessages = [...filteredMessages, responseMessage]
+          updateMessages(finalMessages, deckId)
         }
 
         // Reset states
-        setAwaitingDeckName(false);
-        setPendingFileCards(null);
-        setPendingSubject(null);
+        setAwaitingDeckName(false)
+        setPendingFileCards(null)
+        setPendingSubject(null)
       } else if (file) {
         // ... existing file handling code ...
         try {
@@ -242,70 +235,70 @@ export function FlashcardChat({
           setAwaitingDeckName(true);
           setPendingUserId(userId);
           // Remove loading message and add response
-          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
+          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
           const responseMessage = {
             id: `ai-${Date.now()}`,
             content: `Great! I've processed your file and created ${processedCards.length} flashcards. What would you like to name this deck?`,
             sender: 'ai' as const,
             timestamp: new Date(),
-          };
+          }
 
-          updateMessages([...filteredMessages, responseMessage]);
+          updateMessages([...filteredMessages, responseMessage])
         } catch (error) {
-          console.error('Error processing file:', error);
-          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
+          console.error('Error processing file:', error)
+          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
           const errorMessage = {
             id: `ai-${Date.now()}`,
             content: 'Sorry, there was an error processing your file. Please try again.',
             sender: 'ai' as const,
             timestamp: new Date(),
-          };
+          }
 
-          updateMessages([...filteredMessages, errorMessage]);
+          updateMessages([...filteredMessages, errorMessage])
         }
       } else if (isEditMode && selectedDeck) {
         // In edit mode, send the current flashcards from the Zustand store for editing
         try {
           // Get the most recent flashcards for this deck from the store
-          const currentCards = getDeckFlashcards(selectedDeck.id);
+          const currentCards = getDeckFlashcards(selectedDeck.id)
 
           // Edit the flashcards based on user input
-          const updatedCards = await editFlashcards(message, currentCards);
+          const updatedCards = await editFlashcards(message, currentCards)
 
           // Update the flashcards in the store for this specific deck
-          setDeckFlashcards(selectedDeck.id, updatedCards);
+          setDeckFlashcards(selectedDeck.id, updatedCards)
 
           // Also update the actual deck in the store
-          updateDeck(selectedDeck.id, { flashcards: updatedCards });
+          updateDeck(selectedDeck.id, { flashcards: updatedCards })
 
           // For backward compatibility with the props pattern
           if (onNewDeckCreated) {
             onNewDeckCreated({
               ...selectedDeck,
               flashcards: updatedCards,
-            });
+            })
           }
 
-          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
+          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
           const responseMessage = {
             id: `ai-${Date.now()}`,
             content: `I've updated the "${selectedDeck.title}" deck based on your input. The deck now has ${updatedCards.length} cards.`,
             sender: 'ai' as const,
             timestamp: new Date(),
-          };
+          }
 
-          updateMessages([...filteredMessages, responseMessage], selectedDeck.id);
+          updateMessages([...filteredMessages, responseMessage], selectedDeck.id)
         } catch (error) {
-          console.error('Error editing flashcards:', error);
-          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
+          console.error('Error editing flashcards:', error)
+          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
           const errorMessage = {
             id: `ai-${Date.now()}`,
             content: 'Sorry, there was an error updating the flashcards. Please try again.',
             sender: 'ai' as const,
             timestamp: new Date(),
-          };
+          }
 
-          updateMessages([...filteredMessages, errorMessage], selectedDeck.id);
+          updateMessages([...filteredMessages, errorMessage], selectedDeck.id)
         }
       } else {
         // Generate flashcards using subject
@@ -325,43 +318,43 @@ export function FlashcardChat({
             content: `I can create ${cards.length} flashcards for the subject "${message}". What would you like to name this deck?`,
             sender: 'ai' as const,
             timestamp: new Date(),
-          };
+          }
 
-          updateMessages([...filteredMessages, responseMessage]);
+          updateMessages([...filteredMessages, responseMessage])
         } catch (error) {
-          console.error('Error fetching flashcards:', error);
-          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
+          console.error('Error fetching flashcards:', error)
+          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
           const errorMessage = {
             id: `ai-${Date.now()}`,
             content: 'Sorry, there was an error processing your request. Please try again.',
             sender: 'ai' as const,
             timestamp: new Date(),
-          };
+          }
 
-          updateMessages([...filteredMessages, errorMessage]);
+          updateMessages([...filteredMessages, errorMessage])
         }
       }
     } catch (error) {
-      console.error('Error processing request:', error);
-      const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
+      console.error('Error processing request:', error)
+      const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
       const errorMessage = {
         id: `ai-${Date.now()}`,
         content: 'Sorry, there was an error processing your request. Please try again.',
         sender: 'ai' as const,
         timestamp: new Date(),
-      };
+      }
 
-      updateMessages([...filteredMessages, errorMessage], selectedDeck?.id);
+      updateMessages([...filteredMessages, errorMessage], selectedDeck?.id)
     } finally {
-      setIsAiResponding(false);
+      setIsAiResponding(false)
     }
-  };
+  }
 
   const handleTeach = () => {
-    if (!selectedDeck) return;
+    if (!selectedDeck) return
 
     // Get the latest flashcards from the store or the deck
-    const flashcardsToUse = getDeckFlashcards(selectedDeck.id);
+    const flashcardsToUse = getDeckFlashcards(selectedDeck.id)
 
     // Create a complete deck with the latest flashcards
     const deckToTeach = {
@@ -373,11 +366,11 @@ export function FlashcardChat({
     };
 
     // Set as active teaching deck and navigate
-    setActiveTeachingDeck(deckToTeach);
-    console.log('Teaching deck:', deckToTeach);
-    console.log('Teaching flashcards:', flashcardsToUse);
-    router.push('/teach');
-  };
+    setActiveTeachingDeck(deckToTeach)
+    console.log('Teaching deck:', deckToTeach)
+    console.log('Teaching flashcards:', flashcardsToUse)
+    router.push('/teach')
+  }
 
   return (
     <div
@@ -417,7 +410,12 @@ export function FlashcardChat({
           )}
       </div>
 
-      <ScrollArea className="max-h-[64vh] flex-1 overflow-y-auto p-4">
+      <div
+        className={cn(
+          'min-h-0 flex-1 overflow-y-auto p-4',
+          isFullPage ? 'max-h-[70vh]' : 'max-h-[calc(100vh-260px)]'
+        )}
+      >
         <div className="space-y-4 pb-1">
           {messages.map((message, index) => (
             <div
@@ -459,9 +457,9 @@ export function FlashcardChat({
             </div>
           ))}
         </div>
-      </ScrollArea>
+      </div>
 
-      <div className="border-t border-indigo-100 bg-gradient-to-b from-white to-indigo-50/30 p-4">
+      <div className="sticky bottom-0 z-10 mt-auto border-t border-indigo-100 bg-gradient-to-b from-white to-indigo-50/30 p-4">
         <ChatInput
           onSendMessage={handleSendMessage}
           isDisabled={isAiResponding}
@@ -476,19 +474,19 @@ export function FlashcardChat({
         />
       </div>
     </div>
-  );
+  )
 }
 
 function formatTime(date: Date | string): string {
-  const dateObject = typeof date === 'string' ? new Date(date) : date;
+  const dateObject = typeof date === 'string' ? new Date(date) : date
 
   // Check if date is valid before formatting
   if (isNaN(dateObject.getTime())) {
-    return 'Invalid date';
+    return 'Invalid date'
   }
 
   return new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     minute: 'numeric',
-  }).format(dateObject);
+  }).format(dateObject)
 }

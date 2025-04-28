@@ -1,25 +1,25 @@
-'use client';
+'use client'
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react'
 
-import { Mic, Square } from 'lucide-react';
+import { Mic, Square } from 'lucide-react'
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 type TranscriptSegment = {
-  id: string;
-  text: string;
-  timestamp: string;
-};
+  id: string
+  text: string
+  timestamp: string
+}
 
 // Add a new type for transcription responses from the backend
 type TranscriptionResponse = {
-  transcript: string;
-  confidence: number;
-  channel_tag: number;
-};
+  transcript: string
+  confidence: number
+  channel_tag: number
+}
 
 export function TranscriptView() {
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([
@@ -48,13 +48,13 @@ export function TranscriptView() {
       text: 'This energy is used to split water molecules, releasing oxygen as a byproduct.',
       timestamp: '00:35',
     },
-  ]);
+  ])
 
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   const startRecording = async () => {
     try {
@@ -65,80 +65,80 @@ export function TranscriptView() {
           echoCancellation: true,
           noiseSuppression: true,
         },
-      });
+      })
 
-      console.log('Audio stream constraints:', stream.getAudioTracks()[0].getSettings());
+      console.log('Audio stream constraints:', stream.getAudioTracks()[0].getSettings())
 
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus', // Use widely supported format
-      });
+      })
 
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
 
       mediaRecorder.ondataavailable = event => {
         if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
+          audioChunksRef.current.push(event.data)
         }
-      };
+      }
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        await sendAudioToServer(audioBlob);
-        setRecordingTime(0);
-      };
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
+        await sendAudioToServer(audioBlob)
+        setRecordingTime(0)
+      }
 
-      mediaRecorder.start();
-      setIsRecording(true);
+      mediaRecorder.start()
+      setIsRecording(true)
 
       // Start timer
       timerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
+        setRecordingTime(prev => prev + 1)
+      }, 1000)
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error('Error starting recording:', error)
     }
-  };
+  }
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stop()
 
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
 
-      setIsRecording(false);
+      setIsRecording(false)
 
       // Clear timer
       if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+        clearInterval(timerRef.current)
+        timerRef.current = null
       }
     }
-  };
+  }
 
   const sendAudioToServer = async (audioBlob: Blob) => {
     try {
-      console.log('Preparing to send audio to server, blob size:', audioBlob.size);
-      console.log('Audio blob type:', audioBlob.type);
+      console.log('Preparing to send audio to server, blob size:', audioBlob.size)
+      console.log('Audio blob type:', audioBlob.type)
 
-      const formData = new FormData();
-      formData.append('audio_file', audioBlob, 'recording.wav');
+      const formData = new FormData()
+      formData.append('audio_file', audioBlob, 'recording.wav')
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tts/transcribe`, {
         method: 'POST',
         body: formData,
-      });
+      })
 
-      console.log('Server response status:', response.status);
+      console.log('Server response status:', response.status)
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
-        throw new Error(`Server responded with status: ${response.status}, message: ${errorText}`);
+        const errorText = await response.text()
+        console.error('Error response body:', errorText)
+        throw new Error(`Server responded with status: ${response.status}, message: ${errorText}`)
       }
 
-      const data = await response.json();
-      console.log('Received transcription data:', data);
+      const data = await response.json()
+      console.log('Received transcription data:', data)
 
       // Process the transcriptions
       if (data.transcriptions && data.transcriptions.length > 0) {
@@ -148,34 +148,34 @@ export function TranscriptView() {
             text: item.transcript,
             timestamp: formatTime(recordingTime),
           })
-        );
+        )
 
-        setTranscriptSegments(prev => [...newSegments, ...prev]);
+        setTranscriptSegments(prev => [...newSegments, ...prev])
       } else {
-        console.log('No transcriptions returned in the response');
+        console.log('No transcriptions returned in the response')
       }
     } catch (error) {
-      console.error('Error sending audio to server:', error);
+      console.error('Error sending audio to server:', error)
     }
-  };
+  }
 
   const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
 
   // Clean up on component unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        clearInterval(timerRef.current)
       }
       if (mediaRecorderRef.current && isRecording) {
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
       }
-    };
-  }, [isRecording]);
+    }
+  }, [isRecording])
 
   return (
     <Card className="flex h-auto min-h-[calc(50vh-6rem)] flex-col">
@@ -210,5 +210,5 @@ export function TranscriptView() {
         </ScrollArea>
       </CardContent>
     </Card>
-  );
+  )
 }

@@ -1,19 +1,19 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
+import { useState } from 'react'
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 
 export function TTSTest() {
-  const [text, setText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [text, setText] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handlePlay = async () => {
-    if (!text.trim()) return;
+    if (!text.trim()) return
 
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tts/generate`, {
         method: 'POST',
@@ -21,30 +21,30 @@ export function TTSTest() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ text }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error('Failed to generate speech');
+        throw new Error('Failed to generate speech')
       }
 
       // Create a blob from the response
-      const blob = await response.blob();
-      const audioUrl = URL.createObjectURL(blob);
+      const blob = await response.blob()
+      const audioUrl = URL.createObjectURL(blob)
 
       // Create and play audio
-      const audio = new Audio(audioUrl);
-      audio.play();
+      const audio = new Audio(audioUrl)
+      audio.play()
 
       // Clean up the URL after playing
       audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-      };
+        URL.revokeObjectURL(audioUrl)
+      }
     } catch (error) {
-      console.error('Error generating speech:', error);
+      console.error('Error generating speech:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <Card className="w-full max-w-md">
@@ -62,5 +62,5 @@ export function TTSTest() {
         </Button>
       </CardContent>
     </Card>
-  );
+  )
 }

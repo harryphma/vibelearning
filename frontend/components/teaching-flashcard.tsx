@@ -1,78 +1,77 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
-import { useFlashcardStore } from '@/store/flashcard-store';
-import { FlashcardDeck } from '@/data/mock-flashcards';
-import { BookOpen, ChevronLeft, ChevronRight, Lightbulb, RotateCw, Sparkles } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, Lightbulb, RotateCw, Sparkles } from 'lucide-react'
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-import { cn } from '@/lib/utils';
+} from '@/components/ui/dropdown-menu'
+import { FlashcardDeck } from '@/data/mock-flashcards'
+import { cn } from '@/lib/utils'
+import { useFlashcardStore } from '@/store/flashcard-store'
 
 interface TeachingFlashcardProps {
-  className?: string;
+  className?: string
 }
 
 export function TeachingFlashcard({ className }: TeachingFlashcardProps) {
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [showAnimation, setShowAnimation] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [currentCardIndex, setCurrentCardIndex] = useState(0)
+  const [showAnimation, setShowAnimation] = useState(false)
 
-  const decks = useFlashcardStore(state => state.decks);
-  const activeTeachingDeck = useFlashcardStore(state => state.activeTeachingDeck);
-  const setActiveTeachingDeck = useFlashcardStore(state => state.setActiveTeachingDeck);
+  const decks = useFlashcardStore(state => state.decks)
+  const activeTeachingDeck = useFlashcardStore(state => state.activeTeachingDeck)
+  const setActiveTeachingDeck = useFlashcardStore(state => state.setActiveTeachingDeck)
 
   // Get flashcards for the active deck
-  const flashcards = activeTeachingDeck?.flashcards || [];
+  const flashcards = activeTeachingDeck?.flashcards || []
 
   // Initial animation
   useEffect(() => {
-    setShowAnimation(true);
-    const timer = setTimeout(() => setShowAnimation(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    setShowAnimation(true)
+    const timer = setTimeout(() => setShowAnimation(false), 800)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Reset card index when changing decks
   useEffect(() => {
-    setCurrentCardIndex(0);
-    setIsFlipped(false);
-  }, [activeTeachingDeck]);
+    setCurrentCardIndex(0)
+    setIsFlipped(false)
+  }, [activeTeachingDeck])
 
   const currentCard = flashcards[currentCardIndex] || {
     id: 'empty',
     question: 'No flashcard available',
     answer: 'Please select a teaching deck',
-  };
+  }
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped);
-  };
+    setIsFlipped(!isFlipped)
+  }
 
   const handlePrevious = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1);
-      setIsFlipped(false);
+      setCurrentCardIndex(currentCardIndex - 1)
+      setIsFlipped(false)
     }
-  };
+  }
 
   const handleNext = () => {
     if (currentCardIndex < flashcards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1);
-      setIsFlipped(false);
+      setCurrentCardIndex(currentCardIndex + 1)
+      setIsFlipped(false)
     }
-  };
+  }
 
   const handleSelectDeck = (deck: FlashcardDeck) => {
-    setActiveTeachingDeck(deck);
-  };
+    setActiveTeachingDeck(deck)
+  }
 
   return (
     <Card
@@ -165,7 +164,7 @@ export function TeachingFlashcard({ className }: TeachingFlashcardProps) {
                   <h3 className="mb-4 text-center text-xl font-semibold text-indigo-800">
                     Question
                   </h3>
-                  <p className="flex-grow overflow-auto text-center text-md">
+                  <p className="text-md flex-grow overflow-auto text-center">
                     {currentCard.question}
                   </p>
                   <div className="mt-4 text-right opacity-70">
@@ -232,5 +231,5 @@ export function TeachingFlashcard({ className }: TeachingFlashcardProps) {
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }

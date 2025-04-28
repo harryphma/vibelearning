@@ -1,11 +1,11 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { type CookieOptions, createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { NextResponse, type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  
+
   // Create response first
   const response = NextResponse.redirect(new URL('/new', request.url))
   const cookieStore = await cookies()
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         //   })
         //   console.log(`Cookie removed in callback: ${name}`)
         // }
-      }
+      },
     }
   )
 
@@ -66,8 +66,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Exchange code for session
-    const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
-    
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.exchangeCodeForSession(code)
+
     if (error) {
       console.error('Session exchange error:', error.message)
       throw error
@@ -79,12 +82,15 @@ export async function GET(request: NextRequest) {
 
     // Log success but not sensitive data
     console.log('Auth successful, session established for:', session.user.email)
-    console.log('Cookies present:', response.cookies.getAll().map(c => c.name))
+    console.log(
+      'Cookies present:',
+      response.cookies.getAll().map(c => c.name)
+    )
 
     return response
   } catch (error) {
     console.error('Auth error:', error)
-    
+
     // Clear auth cookies
     const cookiesToClear = request.cookies.getAll()
     cookiesToClear.forEach(cookie => {
@@ -93,11 +99,11 @@ export async function GET(request: NextRequest) {
           name: cookie.name,
           value: '',
           path: '/',
-          expires: new Date(0)
+          expires: new Date(0),
         })
       }
     })
-    
+
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 }

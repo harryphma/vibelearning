@@ -1,43 +1,43 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
-import { createBrowserClient } from '@supabase/ssr';
+import { createBrowserClient } from '@supabase/ssr'
 
-import SignOutButton from './SignOutButton';
+import SignOutButton from './SignOutButton'
 
 export default function UserProfile() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  )
 
   useEffect(() => {
     const getUser = async () => {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
-        setUser(user);
+        } = await supabase.auth.getUser()
+        setUser(user)
       } catch (error) {
-        console.error('Error getting user:', error);
+        console.error('Error getting user:', error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    getUser();
-  }, [supabase.auth]);
+    getUser()
+  }, [supabase.auth])
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
   }
 
   if (!user) {
-    return null;
+    return null
   }
 
   return (
@@ -48,5 +48,5 @@ export default function UserProfile() {
       </div>
       <SignOutButton />
     </div>
-  );
+  )
 }

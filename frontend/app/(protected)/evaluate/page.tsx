@@ -1,29 +1,28 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
-import { useEvaluationStore } from '@/store/evaluation-store';
-import { motion } from 'framer-motion';
-import { Award, BookOpen, Brain, Lightbulb } from 'lucide-react';
+import { motion } from 'framer-motion'
+import { Award, BookOpen, Brain, Lightbulb } from 'lucide-react'
 
-import { Navigation } from '@/components/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { useEvaluationStore } from '@/store/evaluation-store'
 
 export default function EvaluatePage() {
-  const { evaluationResults, isLoading } = useEvaluationStore();
-  const [loading, setLoading] = useState(true);
-  const [scores, setScores] = useState(evaluationResults);
+  const { evaluationResults } = useEvaluationStore()
+  const [loading, setLoading] = useState(true)
+  const [scores, setScores] = useState(evaluationResults)
 
   useEffect(() => {
     if (evaluationResults) {
-      setScores(evaluationResults);
-      setLoading(false);
+      setScores(evaluationResults)
+      setLoading(false)
     } else {
       // Fallback to default scores if no evaluation results
-      setDefaultScores();
+      setDefaultScores()
     }
-  }, [evaluationResults]);
+  }, [evaluationResults])
 
   // Helper function to set default scores for demo purposes
   const setDefaultScores = () => {
@@ -33,10 +32,10 @@ export default function EvaluatePage() {
         explanation_quality: 9,
         intuitiveness: 9,
         overall_score: 9,
-      });
-      setLoading(false);
-    }, 1000);
-  };
+      })
+      setLoading(false)
+    }, 1000)
+  }
 
   const scoreCategories = [
     {
@@ -57,11 +56,10 @@ export default function EvaluatePage() {
       icon: <Lightbulb className="h-5 w-5 text-yellow-500" />,
       description: 'How well you connected concepts to intuitive understanding',
     },
-  ];
+  ]
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navigation />
       <main className="flex flex-1 flex-col">
         <div className="container mx-auto max-w-4xl px-4 py-8">
           <h1 className="mb-8 text-center text-3xl font-bold">Your Learning Evaluation</h1>
@@ -143,5 +141,5 @@ export default function EvaluatePage() {
         </div>
       </main>
     </div>
-  );
+  )
 }

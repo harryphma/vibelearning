@@ -1,21 +1,22 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { User } from '@supabase/supabase-js';
-import { Button } from '@/components/ui/button';
+import { User } from '@supabase/supabase-js'
+import Link from 'next/link'
+
+import { Button } from '@/components/ui/button'
 
 type AuthButtonsProps = {
-  user: User | null;
-  variant?: 'default' | 'mobile';
-  onAction?: () => void;
-};
+  user: User | null
+  variant?: 'default' | 'mobile'
+  onAction?: () => void
+}
 
 export default function AuthButtons({ user, variant = 'default', onAction }: AuthButtonsProps) {
   const handleClick = () => {
     if (onAction) {
-      onAction();
+      onAction()
     }
-  };
+  }
 
   if (user) {
     // User is logged in - show logout button
@@ -31,19 +32,14 @@ export default function AuthButtons({ user, variant = 'default', onAction }: Aut
             Log Out
           </Link>
         </Button>
-      );
+      )
     }
-    
+
     return (
-      <Button
-        size="sm"
-        variant="outline"
-        className="text-gray-800 hover:bg-gray-100"
-        asChild
-      >
+      <Button size="sm" variant="outline" className="text-gray-800 hover:bg-gray-100" asChild>
         <Link href="/auth/logout">Log Out</Link>
       </Button>
-    );
+    )
   }
 
   // User is not logged in - show login button
@@ -58,9 +54,9 @@ export default function AuthButtons({ user, variant = 'default', onAction }: Aut
           Log In
         </Link>
       </Button>
-    );
+    )
   }
-  
+
   return (
     <Button
       size="sm"
@@ -69,5 +65,5 @@ export default function AuthButtons({ user, variant = 'default', onAction }: Aut
     >
       <Link href="/auth/login">Log In</Link>
     </Button>
-  );
-} 
+  )
+}

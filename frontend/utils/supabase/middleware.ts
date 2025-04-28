@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -61,10 +61,9 @@ export async function updateSession(request: NextRequest) {
       // Redirect to login for all other routes if not authenticated
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
-    
+
     // User is authenticated, allow access to protected route
     return supabaseResponse
-
   } catch (error) {
     console.error('Unexpected middleware error:', error)
     // For unexpected errors, redirect to login

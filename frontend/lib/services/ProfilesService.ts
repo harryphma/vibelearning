@@ -1,5 +1,5 @@
-import { Profile } from '@/types/types'
 import { supabase } from '@/lib/supabase'
+import { Profile } from '@/types/types'
 
 class ProfilesService {
   async getCurrentUserProfile(): Promise<Profile | null> {
@@ -20,11 +20,7 @@ class ProfilesService {
   }
 
   async getProfileById(profileId: string): Promise<Profile> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', profileId)
-      .single()
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', profileId).single()
 
     if (error) throw error
     return data
@@ -42,20 +38,13 @@ class ProfilesService {
   }
 
   async createProfile(profileData: Partial<Profile>): Promise<Profile> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([profileData])
-      .select()
-      .single()
+    const { data, error } = await supabase.from('profiles').insert([profileData]).select().single()
 
     if (error) throw error
     return data
   }
 
-  async updateProfile(
-    profileId: string,
-    profileData: Partial<Profile>
-  ): Promise<Profile> {
+  async updateProfile(profileId: string, profileData: Partial<Profile>): Promise<Profile> {
     const { data, error } = await supabase
       .from('profiles')
       .update(profileData)
@@ -67,9 +56,7 @@ class ProfilesService {
     return data
   }
 
-  async updateCurrentUserProfile(
-    profileData: Partial<Profile>
-  ): Promise<Profile | null> {
+  async updateCurrentUserProfile(profileData: Partial<Profile>): Promise<Profile | null> {
     const { data: authData } = await supabase.auth.getUser()
     if (!authData.user) return null
 
@@ -77,10 +64,7 @@ class ProfilesService {
   }
 
   async deleteProfile(profileId: string): Promise<void> {
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', profileId)
+    const { error } = await supabase.from('profiles').delete().eq('id', profileId)
 
     if (error) throw error
   }
@@ -97,4 +81,4 @@ class ProfilesService {
   }
 }
 
-export const profilesService = new ProfilesService() 
+export const profilesService = new ProfilesService()
