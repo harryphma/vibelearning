@@ -22,7 +22,7 @@ const getSession = async () => {
  * @param subject The subject to generate flashcards for
  * @returns Array of FlashcardData
  */
-export async function generateFlashcards(subject: string): Promise<FlashcardData[]> {
+export async function generateFlashcards(subject: string): Promise<{cards: FlashcardData[], user_id: string}> {
   const sessionToken = await getSession();
   const formData = new FormData();
   formData.append('subject', subject.trim());
@@ -40,8 +40,13 @@ export async function generateFlashcards(subject: string): Promise<FlashcardData
       throw new Error(`API error: ${response.status}`);
     }
 
-    const cards = await response.json();
-    return processCards(cards);
+    const result = await response.json();
+    //console.log('API Response:', result); 
+    
+    return {
+      cards: processCards(result.cards),
+      user_id: result.user_id
+    }
   } catch (error) {
     console.error('Error generating flashcards:', error);
     throw error;
@@ -54,13 +59,13 @@ export async function generateFlashcards(subject: string): Promise<FlashcardData
  * @param file The PDF file to generate flashcards from
  * @returns Array of FlashcardData
  */
-export async function generateFlashcardsFromPDF(file: File): Promise<FlashcardData[]> {
+export async function generateFlashcardsFromPDF(file: File): Promise<{cards: FlashcardData[], user_id: string}> {
   const formData = new FormData();
   formData.append('file', file);
   const sessionToken = await getSession();
 
   try {
-    const response = await fetch(`${API_URL}/gemini/auto`, {
+    const response = await fetch(`${API_URL}/gemini/"auto"`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${sessionToken}`,
@@ -73,14 +78,14 @@ export async function generateFlashcardsFromPDF(file: File): Promise<FlashcardDa
     }
 
     const result = await response.json();
-    // Extract cards from the response - handle both formats
-    const cards = result.flashcards || result;
-
-    if (!cards || !Array.isArray(cards)) {
-      throw new Error('Invalid response format from server');
+    //console.log('API Response:', result); 
+    
+    return {
+      cards: processCards(result.cards),
+      user_id: result.user_id
     }
 
-    return processCards(cards);
+    
   } catch (error) {
     console.error('Error generating flashcards from PDF:', error);
     throw error;

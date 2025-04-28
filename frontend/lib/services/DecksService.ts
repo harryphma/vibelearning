@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 class DecksService {
   async getAllDecks(): Promise<Deck[]> {
     const { data, error } = await supabase
-      .from('decks')
+      .from('deck')
       .select('*')
       .order('created_at', { ascending: false })
 
@@ -14,7 +14,7 @@ class DecksService {
 
   async getDeckById(deckId: string): Promise<Deck> {
     const { data, error } = await supabase
-      .from('decks')
+      .from('deck')
       .select('*')
       .eq('id', deckId)
       .single()
@@ -25,7 +25,7 @@ class DecksService {
 
   async getDecksByCreator(creatorId: string): Promise<Deck[]> {
     const { data, error } = await supabase
-      .from('decks')
+      .from('deck')
       .select('*')
       .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
@@ -47,7 +47,7 @@ class DecksService {
 
   async createDeck(deckData: Partial<Deck>): Promise<Deck> {
     const { data, error } = await supabase
-      .from('decks')
+      .from('deck')
       .insert([deckData])
       .select()
       .single()
@@ -58,7 +58,7 @@ class DecksService {
 
   async updateDeck(deckId: string, deckData: Partial<Deck>): Promise<Deck> {
     const { data, error } = await supabase
-      .from('decks')
+      .from('deck')
       .update(deckData)
       .eq('id', deckId)
       .select()
@@ -70,7 +70,7 @@ class DecksService {
 
   async deleteDeck(deckId: string): Promise<void> {
     const { error } = await supabase
-      .from('decks')
+      .from('deck')
       .delete()
       .eq('id', deckId)
 

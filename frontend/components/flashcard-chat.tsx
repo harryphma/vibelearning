@@ -17,8 +17,10 @@ import {
   generateFlashcards,
   generateFlashcardsFromPDF,
 } from '@/lib/api/flashcards';
+import { decksService } from '@/lib/services/';
+import { flashcardsService } from '@/lib/services/';
 import { cn } from '@/lib/utils';
-
+import { Deck } from '@/types/types';
 interface FlashcardChatProps {
   onNewDeckCreated?: (deck: FlashcardDeck) => void;
   selectedDeck?: FlashcardDeck | null;
@@ -73,6 +75,7 @@ export function FlashcardChat({
   const [awaitingDeckName, setAwaitingDeckName] = useState(false);
   const [pendingFileCards, setPendingFileCards] = useState<FlashcardData[] | null>(null);
   const [pendingSubject, setPendingSubject] = useState<string | null>(null);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   // Only initialize messages when first mounting or when switching to a new deck
   useEffect(() => {
@@ -115,6 +118,7 @@ export function FlashcardChat({
     setAwaitingDeckName(false);
     setPendingFileCards(null);
     setPendingSubject(null);
+    setPendingUserId(null);
   }, [isEditMode, selectedDeck?.id]); // Only trigger when selected deck ID changes, not the entire object
 
   // Function to update both local state and store messages
@@ -185,6 +189,14 @@ export function FlashcardChat({
             createdAt: new Date().toISOString(),
           };
 
+          const deck_new: Partial<Deck> = {
+            name: deckName,
+            creator_id: pendingUserId?.replace('auth0|', '')
+          };
+
+          //Store deck_new to supabase
+          await decksService.createDeck(deck_new)
+          
           // Store the deck and its flashcards in Zustand
           addDeck(newDeck);
 
@@ -212,19 +224,23 @@ export function FlashcardChat({
       } else if (file) {
         // ... existing file handling code ...
         try {
-          const cards = await generateFlashcardsFromPDF(file);
+          const response = await generateFlashcardsFromPDF(file);
+          const cards = response.cards;
+          const userId = response.user_id;
 
           // Process cards to ensure they match FlashcardData format
-          const processedCards = cards.map((card: {id?: string; question?: string; answer?: string}, index: number) => ({
-            id: card.id || `card-${Date.now()}-${index}`,
-            question: card.question || 'Question not available',
-            answer: card.answer || 'Answer not available',
-          }));
+          const processedCards = cards.map(
+            (card: { id?: string; question?: string; answer?: string }, index: number) => ({
+              id: card.id || `card-${Date.now()}-${index}`,
+              question: card.question || 'Question not available',
+              answer: card.answer || 'Answer not available',
+            })
+          );
 
           // Store the generated cards and ask for deck name
           setPendingFileCards(processedCards);
           setAwaitingDeckName(true);
-
+          setPendingUserId(userId);
           // Remove loading message and add response
           const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
           const responseMessage = {
@@ -295,12 +311,14 @@ export function FlashcardChat({
         // Generate flashcards using subject
         // ... existing subject handling code ...
         try {
-          const cards = await generateFlashcards(message.trim());
+          const response = await generateFlashcards(message.trim());
+          const cards = response.cards;
+          const userId = response.user_id;
 
           setPendingFileCards(cards);
           setAwaitingDeckName(true);
           setPendingSubject(message.trim());
-
+          setPendingUserId(userId);
           const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
           const responseMessage = {
             id: `ai-${Date.now()}`,
@@ -349,7 +367,9 @@ export function FlashcardChat({
     const deckToTeach = {
       ...selectedDeck,
       flashcards:
-        flashcardsToUse && flashcardsToUse.length > 0 ? flashcardsToUse : selectedDeck.flashcards || [],
+        flashcardsToUse && flashcardsToUse.length > 0
+          ? flashcardsToUse
+          : selectedDeck.flashcards || [],
     };
 
     // Set as active teaching deck and navigate
@@ -397,8 +417,8 @@ export function FlashcardChat({
           )}
       </div>
 
-      <ScrollArea className="flex-1 p-4 overflow-y-auto max-h-[64vh]">
-        <div className="space-y-4 pb-1 ">
+      <ScrollArea className="max-h-[64vh] flex-1 overflow-y-auto p-4">
+        <div className="space-y-4 pb-1">
           {messages.map((message, index) => (
             <div
               key={message.id}
