@@ -36,7 +36,7 @@ class DecksService {
 
   async getFlashcardsForDeck(deckId: string): Promise<Flashcard[]> {
     const { data, error } = await supabase
-      .from('flashcards')
+      .from('flashcard')
       .select('*')
       .eq('deck_id', deckId)
       .order('created_at', { ascending: true })

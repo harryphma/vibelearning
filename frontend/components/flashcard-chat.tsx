@@ -13,7 +13,7 @@ import { decksService } from '@/lib/services/';
 import { flashcardsService } from '@/lib/services/';
 import { cn } from '@/lib/utils'
 import { Message, useFlashcardStore } from '@/store/flashcard-store'
-import { Deck } from '@/types/types';
+import { Deck, Flashcard } from '@/types/types';
 interface FlashcardChatProps {
   onNewDeckCreated?: (deck: FlashcardDeck) => void
   selectedDeck?: FlashcardDeck | null
@@ -182,13 +182,26 @@ export function FlashcardChat({
             createdAt: new Date().toISOString(),
           };
 
+
+          //Format the deck for supabase
           const deck_new: Partial<Deck> = {
             name: deckName,
             creator_id: pendingUserId?.replace('auth0|', '')
           };
 
           //Store deck_new to supabase
-          await decksService.createDeck(deck_new)
+          const deck = await decksService.createDeck(deck_new)
+
+
+          //Format the flashcards for supabase
+          const flashcards_new: Partial<Flashcard>[] = finalCards.map((card) => ({
+            question: card.question,
+            answer: card.answer,
+            deck_id: deck.id,
+          }))
+
+          //Store flashcards_new to supabase based on the deck_id
+          await flashcardsService.createMultipleFlashcards(flashcards_new)
           
           // Store the deck and its flashcards in Zustand
           addDeck(newDeck)
