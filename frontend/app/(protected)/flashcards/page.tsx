@@ -1,27 +1,46 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
 import { FlashcardChat } from '@/components/flashcard-chat'
 import { FlashcardDeckList } from '@/components/flashcard-deck-list'
 import { FlashcardViewer } from '@/components/flashcard-viewer'
 import { Button } from '@/components/ui/button'
 import { FlashcardDeck } from '@/data/mock-flashcards'
-import { useFlashcardStore } from '@/store/flashcard-store'
+import { decksService } from '@/lib/services'
 
 export default function FlashcardsPage() {
   const [isCreateMode, setIsCreateMode] = useState(false)
+  const [activeDeckId, setActiveDeckId] = useState<string | null>(null)
+  const [selectedDeck, setSelectedDeck] = useState<FlashcardDeck | null>(null)
 
-  /* ---------- Zustand ---------- */
-  const { decks, activeDeckId, setActiveDeckId, getDeck } = useFlashcardStore()
-  const selectedDeck = getDeck(activeDeckId || '')
-
-  /* ---------- default to first deck ---------- */
+  // Fetch deck details when activeDeckId changes
   useEffect(() => {
-    if (decks.length && !activeDeckId) {
-      setActiveDeckId(decks[0].id)
+    async function fetchDeckDetails() {
+      if (!activeDeckId) {
+        setSelectedDeck(null)
+        return
+      }
+
+      try {
+        const deck = await decksService.getDeckById(activeDeckId)
+        const cards = await decksService.getFlashcardsForDeck(activeDeckId)
+        
+        // Transform to FlashcardDeck format
+        setSelectedDeck({
+          id: deck.id,
+          title: deck.name,
+          subject: 'General',
+          flashcards: cards,
+          createdAt: deck.created_at
+        })
+      } catch (error) {
+        console.error('Error fetching deck details:', error)
+        setSelectedDeck(null)
+      }
     }
-  }, [decks, activeDeckId, setActiveDeckId])
+
+    fetchDeckDetails()
+  }, [activeDeckId])
 
   /* ---------- handlers ---------- */
   const handleDeckSelect = (deck: FlashcardDeck) => {
@@ -43,7 +62,6 @@ export default function FlashcardsPage() {
           onDeckSelect={handleDeckSelect}
           onCreateNew={() => setIsCreateMode(true)}
           disableCreateButton={isCreateMode}
-          decks={decks}
           selectedDeckId={activeDeckId}
         />
       </div>

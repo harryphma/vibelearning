@@ -1,30 +1,52 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
 import { BookOpen, ChevronLeft, ChevronRight, RotateCw, Sparkles } from 'lucide-react'
-
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { FlashcardData } from '@/data/mock-flashcards'
 import { cn } from '@/lib/utils'
-import { useFlashcardStore } from '@/store/flashcard-store'
+import { decksService } from '@/lib/services'
 
 interface FlashcardViewerProps {
-  cards?: FlashcardData[]
   title?: string
   deckId?: string
 }
 
-export function FlashcardViewer({ cards: propCards, title, deckId }: FlashcardViewerProps) {
+export function FlashcardViewer({ title, deckId }: FlashcardViewerProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isFlipping, setIsFlipping] = useState(false)
   const [showAnimation, setShowAnimation] = useState(false)
+  const [cards, setCards] = useState<FlashcardData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  /* ---------- data source ---------- */
-  const { getDeckFlashcards } = useFlashcardStore()
-  const cards = deckId ? getDeckFlashcards(deckId) : propCards || []
+  // Fetch cards from Supabase when deckId changes
+  useEffect(() => {
+    async function fetchCards() {
+      if (!deckId) {
+        setCards([])
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        setIsLoading(true)
+        const fetchedCards = await decksService.getFlashcardsForDeck(deckId)
+        setCards(fetchedCards)
+      } catch (error) {
+        console.error('Error fetching flashcards:', error)
+        setCards([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCards()
+    setCurrentCardIndex(0) // Reset to first card when deck changes
+    setIsFlipped(false)
+  }, [deckId])
+
   const currentCard = cards.length ? cards[currentCardIndex] : null
 
   /* ---------- mount / card-change animation ---------- */
@@ -57,6 +79,15 @@ export function FlashcardViewer({ cards: propCards, title, deckId }: FlashcardVi
       setCurrentCardIndex(i => i + 1)
       setIsFlipped(false)
     }
+  }
+
+  /* ---------- loading state ---------- */
+  if (isLoading) {
+    return (
+      <div className="flex w-full max-w-2xl flex-col items-center justify-center rounded-2xl border border-purple-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-8 shadow-sm">
+        <p className="text-center font-medium text-indigo-600">Loading flashcards...</p>
+      </div>
+    )
   }
 
   /* ---------- empty-deck state ---------- */

@@ -7,13 +7,15 @@ import { BookOpen, Clock, Plus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FlashcardDeck } from '@/data/mock-flashcards'
+import { getUserInfo } from '@/lib/api/auth'
+import { decksService } from '@/lib/services/'
 import { cn } from '@/lib/utils'
 
 interface FlashcardDeckListProps {
   onDeckSelect?: (deck: FlashcardDeck) => void
   onCreateNew?: () => void
   disableCreateButton?: boolean
-  decks: FlashcardDeck[]
+  decks?: FlashcardDeck[]
   selectedDeckId?: string | null
 }
 
@@ -21,12 +23,13 @@ export function FlashcardDeckList({
   onDeckSelect,
   onCreateNew,
   disableCreateButton,
-  decks,
   selectedDeckId: propSelectedDeckId,
 }: FlashcardDeckListProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(propSelectedDeckId || null)
   const [animateDeckId, setAnimateDeckId] = useState<string | null>(null)
+  const [userDecks, setUserDecks] = useState<FlashcardDeck[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   /* sync selection with parent */
   useEffect(() => {
@@ -44,14 +47,54 @@ export function FlashcardDeckList({
 
   /* auto-select first deck */
   useEffect(() => {
-    if (decks.length && !selectedDeckId) {
-      const first = decks[0]
+    if (userDecks.length && !selectedDeckId) {
+      const first = userDecks[0]
       setSelectedDeckId(first.id)
       onDeckSelect?.(first)
     }
-  }, [decks, selectedDeckId, onDeckSelect])
+  }, [userDecks, selectedDeckId, onDeckSelect])
 
-  const filteredDecks = decks.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()))
+  //Fetch decks from supabase
+  useEffect(() => {
+    async function fetchUserDecksAndCounts() {
+      try {
+        setIsLoading(true)
+        // Get current user
+        const userData = await getUserInfo()
+        const userId = userData.id
+
+        // Get decks for current user from supabase
+        const rawDecks = await decksService.getDecksByCreator(userId)
+
+        // Transform the decks to match FlashcardDeck type
+        const decksWithFlashcards = await Promise.all(
+          rawDecks.map(async deck => {
+            const cards = await decksService.getFlashcardsForDeck(deck.id)
+            return {
+              id: deck.id,
+              title: deck.name,
+              subject: 'General', // Default subject since it's not available from Supabase
+              flashcards: cards,
+              createdAt: deck.created_at,
+            }
+          })
+        )
+
+        setUserDecks(decksWithFlashcards)
+      } catch (error) {
+        console.error('Error fetching decks:', error)
+        setUserDecks([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUserDecksAndCounts()
+  }, [])
+
+  const filteredDecks = userDecks.filter(d =>
+    d.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col rounded-lg border border-indigo-100 bg-gradient-to-b from-white to-indigo-50/30">
@@ -81,7 +124,11 @@ export function FlashcardDeckList({
 
       {/* scrollable list */}
       <div className="min-h-0 w-[20vw] flex-1 overflow-y-scroll p-2 px-1">
-        {filteredDecks.length ? (
+        {isLoading ? (
+          <div className="p-6 text-center">
+            <p className="text-indigo-600">Loading decks...</p>
+          </div>
+        ) : filteredDecks.length ? (
           filteredDecks.map(deck => (
             <button
               key={deck.id}
