@@ -4,7 +4,7 @@ import { Message, MessageThread } from '@/types/types'
 class MessagesService {
   async getAllThreads(): Promise<MessageThread[]> {
     const { data, error } = await supabase
-      .from('message_threads')
+      .from('messageThread')
       .select('*')
       .order('created_at', { ascending: false })
 
@@ -14,7 +14,7 @@ class MessagesService {
 
   async getThreadsByCreator(creatorId: string): Promise<MessageThread[]> {
     const { data, error } = await supabase
-      .from('message_threads')
+      .from('messageThread')
       .select('*')
       .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
@@ -25,7 +25,7 @@ class MessagesService {
 
   async getThreadById(threadId: number): Promise<MessageThread> {
     const { data, error } = await supabase
-      .from('message_threads')
+      .from('messageThread')
       .select('*')
       .eq('id', threadId)
       .single()
@@ -36,7 +36,7 @@ class MessagesService {
 
   async createThread(threadData: Partial<MessageThread>): Promise<MessageThread> {
     const { data, error } = await supabase
-      .from('message_threads')
+      .from('messageThread')
       .insert([threadData])
       .select()
       .single()
@@ -47,7 +47,7 @@ class MessagesService {
 
   async updateThread(threadId: number, threadData: Partial<MessageThread>): Promise<MessageThread> {
     const { data, error } = await supabase
-      .from('message_threads')
+      .from('messageThread')
       .update(threadData)
       .eq('id', threadId)
       .select()
@@ -62,14 +62,14 @@ class MessagesService {
     await this.deleteMessagesByThread(threadId)
 
     // Then delete the thread itself
-    const { error } = await supabase.from('message_threads').delete().eq('id', threadId)
+    const { error } = await supabase.from('messageThread').delete().eq('id', threadId)
 
     if (error) throw error
   }
 
   async getMessagesByThread(threadId: number): Promise<Message[]> {
     const { data, error } = await supabase
-      .from('messages')
+      .from('message')
       .select('*')
       .eq('thread_id', threadId)
       .order('created_at', { ascending: true })
@@ -79,14 +79,14 @@ class MessagesService {
   }
 
   async getMessageById(messageId: number): Promise<Message> {
-    const { data, error } = await supabase.from('messages').select('*').eq('id', messageId).single()
+    const { data, error } = await supabase.from('message').select('*').eq('id', messageId).single()
 
     if (error) throw error
     return data
   }
 
   async createMessage(messageData: Partial<Message>): Promise<Message> {
-    const { data, error } = await supabase.from('messages').insert([messageData]).select().single()
+    const { data, error } = await supabase.from('message').insert([messageData]).select().single()
 
     if (error) throw error
     return data
@@ -94,7 +94,7 @@ class MessagesService {
 
   async updateMessage(messageId: number, messageData: Partial<Message>): Promise<Message> {
     const { data, error } = await supabase
-      .from('messages')
+      .from('message')
       .update(messageData)
       .eq('id', messageId)
       .select()
@@ -105,13 +105,13 @@ class MessagesService {
   }
 
   async deleteMessage(messageId: number): Promise<void> {
-    const { error } = await supabase.from('messages').delete().eq('id', messageId)
+    const { error } = await supabase.from('message').delete().eq('id', messageId)
 
     if (error) throw error
   }
 
   async deleteMessagesByThread(threadId: number): Promise<void> {
-    const { error } = await supabase.from('messages').delete().eq('thread_id', threadId)
+    const { error } = await supabase.from('message').delete().eq('thread_id', threadId)
 
     if (error) throw error
   }

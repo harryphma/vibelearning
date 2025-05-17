@@ -15,7 +15,7 @@ async def validate_token(current_user = Depends(get_current_user)):
 async def get_user_info(current_user = Depends(get_current_user)):
     """Return current user information"""
     return {
-        "id": current_user.id,
-        "email": current_user.email,
-        "user_metadata": current_user.user_metadata
+        "id": current_user.user.id,
+        "email": current_user.user.email,
+        "user_metadata": current_user.user.user_metadata
     }
