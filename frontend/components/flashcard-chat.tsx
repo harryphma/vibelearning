@@ -9,11 +9,12 @@ import { ChatInput } from '@/components/chat-input'
 import { Button } from '@/components/ui/button'
 import { FlashcardData, FlashcardDeck } from '@/data/mock-flashcards'
 import { editFlashcards, generateFlashcards, generateFlashcardsFromPDF } from '@/lib/api/flashcards'
-import { decksService } from '@/lib/services/';
-import { flashcardsService } from '@/lib/services/';
+import { decksService, flashcardsService, messagesService } from '@/lib/services/'
 import { cn } from '@/lib/utils'
 import { Message, useFlashcardStore } from '@/store/flashcard-store'
-import { Deck, Flashcard } from '@/types/types';
+import { Message as DBMessage, Deck, Flashcard, MessageThread } from '@/types/types'
+import { getUserInfo } from '@/lib/api/auth'
+
 interface FlashcardChatProps {
   onNewDeckCreated?: (deck: FlashcardDeck) => void
   selectedDeck?: FlashcardDeck | null
@@ -68,7 +69,7 @@ export function FlashcardChat({
   const [awaitingDeckName, setAwaitingDeckName] = useState(false)
   const [pendingFileCards, setPendingFileCards] = useState<FlashcardData[] | null>(null)
   const [pendingSubject, setPendingSubject] = useState<string | null>(null)
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null)
 
   // Only initialize messages when first mounting or when switching to a new deck
   useEffect(() => {
@@ -108,11 +109,11 @@ export function FlashcardChat({
       ])
     }
 
-    setAwaitingDeckName(false);
-    setPendingFileCards(null);
-    setPendingSubject(null);
-    setPendingUserId(null);
-  }, [isEditMode, selectedDeck?.id]); // Only trigger when selected deck ID changes, not the entire object
+    setAwaitingDeckName(false)
+    setPendingFileCards(null)
+    setPendingSubject(null)
+    setPendingUserId(null)
+  }, [isEditMode, selectedDeck?.id]) // Only trigger when selected deck ID changes, not the entire object
 
   // Function to update both local state and store messages
   const updateMessages = (newMessages: Message[], deckId?: string) => {
@@ -180,21 +181,19 @@ export function FlashcardChat({
             description: `Flashcards about ${pendingSubject || deckName}`,
             flashcards: finalCards,
             createdAt: new Date().toISOString(),
-          };
-
+          }
 
           //Format the deck for supabase
           const deck_new: Partial<Deck> = {
             name: deckName,
-            creator_id: pendingUserId?.replace('auth0|', '')
-          };
+            creator_id: pendingUserId?.replace('auth0|', ''),
+          }
 
           //Store deck_new to supabase
           const deck = await decksService.createDeck(deck_new)
 
-
           //Format the flashcards for supabase
-          const flashcards_new: Partial<Flashcard>[] = finalCards.map((card) => ({
+          const flashcards_new: Partial<Flashcard>[] = finalCards.map(card => ({
             question: card.question,
             answer: card.answer,
             deck_id: deck.id,
@@ -202,7 +201,7 @@ export function FlashcardChat({
 
           //Store flashcards_new to supabase based on the deck_id
           await flashcardsService.createMultipleFlashcards(flashcards_new)
-          
+
           // Store the deck and its flashcards in Zustand
           addDeck(newDeck)
 
@@ -230,9 +229,9 @@ export function FlashcardChat({
       } else if (file) {
         // ... existing file handling code ...
         try {
-          const response = await generateFlashcardsFromPDF(file);
-          const cards = response.cards;
-          const userId = response.user_id;
+          const response = await generateFlashcardsFromPDF(file)
+          const cards = response.cards
+          const userId = response.user_id
 
           // Process cards to ensure they match FlashcardData format
           const processedCards = cards.map(
@@ -241,12 +240,12 @@ export function FlashcardChat({
               question: card.question || 'Question not available',
               answer: card.answer || 'Answer not available',
             })
-          );
+          )
 
           // Store the generated cards and ask for deck name
-          setPendingFileCards(processedCards);
-          setAwaitingDeckName(true);
-          setPendingUserId(userId);
+          setPendingFileCards(processedCards)
+          setAwaitingDeckName(true)
+          setPendingUserId(userId)
           // Remove loading message and add response
           const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
           const responseMessage = {
@@ -317,15 +316,15 @@ export function FlashcardChat({
         // Generate flashcards using subject
         // ... existing subject handling code ...
         try {
-          const response = await generateFlashcards(message.trim());
-          const cards = response.cards;
-          const userId = response.user_id;
+          const response = await generateFlashcards(message.trim())
+          const cards = response.cards
+          const userId = response.user_id
 
-          setPendingFileCards(cards);
-          setAwaitingDeckName(true);
-          setPendingSubject(message.trim());
-          setPendingUserId(userId);
-          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading);
+          setPendingFileCards(cards)
+          setAwaitingDeckName(true)
+          setPendingSubject(message.trim())
+          setPendingUserId(userId)
+          const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
           const responseMessage = {
             id: `ai-${Date.now()}`,
             content: `I can create ${cards.length} flashcards for the subject "${message}". What would you like to name this deck?`,
@@ -363,26 +362,81 @@ export function FlashcardChat({
     }
   }
 
-  const handleTeach = () => {
+  const handleTeach = async () => {
     if (!selectedDeck) return
+  
+    try {
+      const userData = await getUserInfo()
+      const userId = userData.id
+      
+      // Get the latest flashcards from the store
+      const flashcardsToUse = getDeckFlashcards(selectedDeck.id)
 
-    // Get the latest flashcards from the store or the deck
-    const flashcardsToUse = getDeckFlashcards(selectedDeck.id)
-
-    // Create a complete deck with the latest flashcards
-    const deckToTeach = {
-      ...selectedDeck,
-      flashcards:
-        flashcardsToUse && flashcardsToUse.length > 0
+      // Get the latest messages from the store
+      const messagesToStore = getDeckMessages(selectedDeck.id)
+  
+      // First, try to find an existing thread for this deck
+      const existingThreads = await messagesService.getAllThreads()
+      const existingThread = existingThreads.find(thread => 
+        thread.name === `Teaching Session - ${selectedDeck.title}` && 
+        thread.creator_id === userId
+      )
+  
+      let thread
+      if (existingThread) {
+        console.log('Using existing thread:', existingThread)
+        thread = existingThread
+      } else {
+        // Create a new thread only if one doesn't exist
+        const threadData: Partial<MessageThread> = {
+          name: `Teaching Session - ${selectedDeck.title}`,
+          creator_id: userId,
+        }
+        console.log('Creating new thread with data:', threadData)
+        thread = await messagesService.createThread(threadData)
+        console.log('New thread created:', thread)
+      }
+  
+      // Store all messages in the database
+      for (const message of messagesToStore) {
+        const messageData: Partial<DBMessage> = {
+          content: message.content,
+          role: message.sender === 'user' ? 'user' : 'ai',
+          thread_id: thread.id,
+        }
+        console.log('Storing message:', messageData)
+        await messagesService.createMessage(messageData)
+      }
+  
+      // Create a complete deck with the latest flashcards
+      const deckToTeach = {
+        ...selectedDeck,
+        flashcards: flashcardsToUse && flashcardsToUse.length > 0
           ? flashcardsToUse
           : selectedDeck.flashcards || [],
-    };
-
-    // Set as active teaching deck and navigate
-    setActiveTeachingDeck(deckToTeach)
-    console.log('Teaching deck:', deckToTeach)
-    console.log('Teaching flashcards:', flashcardsToUse)
-    router.push('/teach')
+      }
+      console.log('Deck to teach:', deckToTeach)
+  
+      // Set as active teaching deck and navigate
+      setActiveTeachingDeck(deckToTeach)
+      router.push('/teach')
+    } catch (error: any) {
+      console.error('Error storing chat history:', error)
+      console.error('Error details:', {
+        message: error?.message || 'Unknown error',
+        code: error?.code || 'No error code',
+        details: error?.details || 'No details',
+        stack: error?.stack || 'No stack trace'
+      })
+      
+      // Still proceed with teaching even if storing fails
+      const deckToTeach = {
+        ...selectedDeck,
+        flashcards: getDeckFlashcards(selectedDeck.id) || selectedDeck.flashcards || [],
+      }
+      setActiveTeachingDeck(deckToTeach)
+      router.push('/teach')
+    }
   }
 
   return (
