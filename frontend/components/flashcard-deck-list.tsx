@@ -30,6 +30,7 @@ export function FlashcardDeckList({
   const [animateDeckId, setAnimateDeckId] = useState<string | null>(null)
   const [userDecks, setUserDecks] = useState<FlashcardDeck[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   /* sync selection with parent */
   useEffect(() => {
@@ -90,7 +91,23 @@ export function FlashcardDeckList({
     }
 
     fetchUserDecksAndCounts()
-  }, [])
+  }, [refreshTrigger])
+
+  // Add a method to trigger refresh
+  const refreshDeckList = () => {
+    setRefreshTrigger(prev => prev + 1)
+  }
+
+  // Expose refresh method to parent component
+  useEffect(() => {
+    if (onCreateNew) {
+      const originalOnCreateNew = onCreateNew
+      onCreateNew = () => {
+        originalOnCreateNew()
+        refreshDeckList()
+      }
+    }
+  }, [onCreateNew])
 
   const filteredDecks = userDecks.filter(d =>
     d.title.toLowerCase().includes(searchQuery.toLowerCase())

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+
 import { FlashcardChat } from '@/components/flashcard-chat'
 import { FlashcardDeckList } from '@/components/flashcard-deck-list'
 import { FlashcardViewer } from '@/components/flashcard-viewer'
@@ -12,6 +13,7 @@ export default function FlashcardsPage() {
   const [isCreateMode, setIsCreateMode] = useState(false)
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null)
   const [selectedDeck, setSelectedDeck] = useState<FlashcardDeck | null>(null)
+  const [deckListKey, setDeckListKey] = useState(0)
 
   // Fetch deck details when activeDeckId changes
   useEffect(() => {
@@ -24,14 +26,14 @@ export default function FlashcardsPage() {
       try {
         const deck = await decksService.getDeckById(activeDeckId)
         const cards = await decksService.getFlashcardsForDeck(activeDeckId)
-        
+
         // Transform to FlashcardDeck format
         setSelectedDeck({
           id: deck.id,
           title: deck.name,
           subject: 'General',
           flashcards: cards,
-          createdAt: deck.created_at
+          createdAt: deck.created_at,
         })
       } catch (error) {
         console.error('Error fetching deck details:', error)
@@ -51,6 +53,11 @@ export default function FlashcardsPage() {
   const handleNewDeckCreated = (deck: FlashcardDeck) => {
     setActiveDeckId(deck.id)
     setIsCreateMode(false)
+    setDeckListKey(prev => prev + 1) // Force deck list to refresh
+  }
+
+  const handleCreateNew = () => {
+    setIsCreateMode(true)
   }
 
   /* ---------- render ---------- */
@@ -59,8 +66,9 @@ export default function FlashcardsPage() {
       {/* -------- deck list column -------- */}
       <div className="flex min-h-0 min-w-0 flex-col border-r md:col-span-2">
         <FlashcardDeckList
+          key={deckListKey}
           onDeckSelect={handleDeckSelect}
-          onCreateNew={() => setIsCreateMode(true)}
+          onCreateNew={handleCreateNew}
           disableCreateButton={isCreateMode}
           selectedDeckId={activeDeckId}
         />

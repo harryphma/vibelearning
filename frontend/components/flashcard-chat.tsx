@@ -8,12 +8,12 @@ import { useRouter } from 'next/navigation'
 import { ChatInput } from '@/components/chat-input'
 import { Button } from '@/components/ui/button'
 import { FlashcardData, FlashcardDeck } from '@/data/mock-flashcards'
+import { getUserInfo } from '@/lib/api/auth'
 import { editFlashcards, generateFlashcards, generateFlashcardsFromPDF } from '@/lib/api/flashcards'
 import { decksService, flashcardsService, messagesService } from '@/lib/services/'
 import { cn } from '@/lib/utils'
 import { Message, useFlashcardStore } from '@/store/flashcard-store'
 import { Message as DBMessage, Deck, Flashcard, MessageThread } from '@/types/types'
-import { getUserInfo } from '@/lib/api/auth'
 
 interface FlashcardChatProps {
   onNewDeckCreated?: (deck: FlashcardDeck) => void
@@ -173,16 +173,6 @@ export function FlashcardChat({
         // ... existing deck creation code ...
 
         if (finalCards) {
-          const deckId = `deck-${Date.now()}`
-          const newDeck: FlashcardDeck = {
-            id: deckId,
-            title: deckName,
-            subject: pendingSubject || deckName,
-            description: `Flashcards about ${pendingSubject || deckName}`,
-            flashcards: finalCards,
-            createdAt: new Date().toISOString(),
-          }
-
           //Format the deck for supabase
           const deck_new: Partial<Deck> = {
             name: deckName,
@@ -202,6 +192,16 @@ export function FlashcardChat({
           //Store flashcards_new to supabase based on the deck_id
           await flashcardsService.createMultipleFlashcards(flashcards_new)
 
+          // Create the new deck object with the correct ID from Supabase
+          const newDeck: FlashcardDeck = {
+            id: deck.id,
+            title: deckName,
+            subject: pendingSubject || deckName,
+            description: `Flashcards about ${pendingSubject || deckName}`,
+            flashcards: finalCards,
+            createdAt: deck.created_at,
+          }
+
           // Store the deck and its flashcards in Zustand
           addDeck(newDeck)
 
@@ -219,7 +219,7 @@ export function FlashcardChat({
           }
 
           const finalMessages = [...filteredMessages, responseMessage]
-          updateMessages(finalMessages, deckId)
+          updateMessages(finalMessages, deck.id)
         }
 
         // Reset states
@@ -364,24 +364,24 @@ export function FlashcardChat({
 
   const handleTeach = async () => {
     if (!selectedDeck) return
-  
+
     try {
       const userData = await getUserInfo()
       const userId = userData.id
-      
+
       // Get the latest flashcards from the store
       const flashcardsToUse = getDeckFlashcards(selectedDeck.id)
 
       // Get the latest messages from the store
       const messagesToStore = getDeckMessages(selectedDeck.id)
-  
+
       // First, try to find an existing thread for this deck
       const existingThreads = await messagesService.getAllThreads()
-      const existingThread = existingThreads.find(thread => 
-        thread.name === `Teaching Session - ${selectedDeck.title}` && 
-        thread.creator_id === userId
+      const existingThread = existingThreads.find(
+        thread =>
+          thread.name === `Teaching Session - ${selectedDeck.title}` && thread.creator_id === userId
       )
-  
+
       let thread
       if (existingThread) {
         console.log('Using existing thread:', existingThread)
@@ -396,7 +396,7 @@ export function FlashcardChat({
         thread = await messagesService.createThread(threadData)
         console.log('New thread created:', thread)
       }
-  
+
       // Store all messages in the database
       for (const message of messagesToStore) {
         const messageData: Partial<DBMessage> = {
@@ -407,16 +407,17 @@ export function FlashcardChat({
         console.log('Storing message:', messageData)
         await messagesService.createMessage(messageData)
       }
-  
+
       // Create a complete deck with the latest flashcards
       const deckToTeach = {
         ...selectedDeck,
-        flashcards: flashcardsToUse && flashcardsToUse.length > 0
-          ? flashcardsToUse
-          : selectedDeck.flashcards || [],
+        flashcards:
+          flashcardsToUse && flashcardsToUse.length > 0
+            ? flashcardsToUse
+            : selectedDeck.flashcards || [],
       }
       console.log('Deck to teach:', deckToTeach)
-  
+
       // Set as active teaching deck and navigate
       setActiveTeachingDeck(deckToTeach)
       router.push('/teach')
@@ -426,9 +427,9 @@ export function FlashcardChat({
         message: error?.message || 'Unknown error',
         code: error?.code || 'No error code',
         details: error?.details || 'No details',
-        stack: error?.stack || 'No stack trace'
+        stack: error?.stack || 'No stack trace',
       })
-      
+
       // Still proceed with teaching even if storing fails
       const deckToTeach = {
         ...selectedDeck,
