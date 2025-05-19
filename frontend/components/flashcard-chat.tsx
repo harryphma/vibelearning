@@ -74,46 +74,88 @@ export function FlashcardChat({
 
   // Only initialize messages when first mounting or when switching to a new deck
   useEffect(() => {
-    if (isEditMode && selectedDeck) {
-      const storedMessages = getDeckMessages(selectedDeck.id)
+    const initializeMessages = async () => {
+      if (isEditMode && selectedDeck) {
+        setIsLoadingMessages(true)
+        try {
+          // Get user info for database queries
+          const userData = await getUserInfo()
+          const userId = userData.id
 
-      // Use stored messages if they exist, otherwise initialize with welcome message
-      if (storedMessages.length > 0) {
-        setMessages(storedMessages)
-      } else {
-        const initialMessage = {
-          id: `deck-${selectedDeck.id}`,
-          content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
-          sender: 'ai' as const,
-          timestamp: new Date(),
+          // Find existing thread for this deck
+          const existingThreads = await messagesService.getAllThreads()
+          const existingThread = existingThreads.find(
+            thread =>
+              thread.name === `Teaching Session - ${selectedDeck.title}` &&
+              thread.creator_id === userId
+          )
+
+          if (existingThread) {
+            // Get messages from database
+            const dbMessages = await messagesService.getMessagesByThread(existingThread.id)
+
+            // Convert database messages to our Message format
+            const convertedMessages = dbMessages.map(msg => ({
+              id: msg.id.toString(),
+              content: msg.content,
+              sender: msg.role === 'user' ? ('user' as const) : ('ai' as const),
+              timestamp: new Date(msg.created_at),
+            }))
+
+            // Update both local state and store
+            setMessages(convertedMessages)
+            setDeckMessages(selectedDeck.id, convertedMessages)
+          } else {
+            // No existing thread, initialize with welcome message
+            const initialMessage = {
+              id: `deck-${selectedDeck.id}`,
+              content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
+              sender: 'ai' as const,
+              timestamp: new Date(),
+            }
+
+            setMessages([initialMessage])
+            setDeckMessages(selectedDeck.id, [initialMessage])
+          }
+
+          // Update deckFlashcards in the store when selecting a deck to edit
+          if (selectedDeck.flashcards) {
+            setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards)
+          }
+        } catch (error) {
+          console.error('Error loading messages:', error)
+          // Fallback to welcome message if there's an error
+          const initialMessage = {
+            id: `deck-${selectedDeck.id}`,
+            content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
+            sender: 'ai' as const,
+            timestamp: new Date(),
+          }
+          setMessages([initialMessage])
+          setDeckMessages(selectedDeck.id, [initialMessage])
+        } finally {
+          setIsLoadingMessages(false)
         }
-
-        setMessages([initialMessage])
-        // Save this initial message to the store
-        setDeckMessages(selectedDeck.id, [initialMessage])
+      } else if (!isEditMode && !selectedDeck) {
+        // Reset messages for creating a new deck
+        setMessages([
+          {
+            id: 'new-deck',
+            content:
+              'Welcome to the flashcard creator! What subject would you like to create flashcards for? You can also upload a PDF file to generate flashcards.',
+            sender: 'ai',
+            timestamp: new Date(),
+          },
+        ])
       }
 
-      // Update deckFlashcards in the store when selecting a deck to edit
-      if (selectedDeck.flashcards) {
-        setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards)
-      }
-    } else if (!isEditMode && !selectedDeck) {
-      // Reset messages for creating a new deck
-      setMessages([
-        {
-          id: 'new-deck',
-          content:
-            'Welcome to the flashcard creator! What subject would you like to create flashcards for? You can also upload a PDF file to generate flashcards.',
-          sender: 'ai',
-          timestamp: new Date(),
-        },
-      ])
+      setAwaitingDeckName(false)
+      setPendingFileCards(null)
+      setPendingSubject(null)
+      setPendingUserId(null)
     }
 
-    setAwaitingDeckName(false)
-    setPendingFileCards(null)
-    setPendingSubject(null)
-    setPendingUserId(null)
+    initializeMessages()
   }, [isEditMode, selectedDeck?.id]) // Only trigger when selected deck ID changes, not the entire object
 
   // Function to update both local state and store messages

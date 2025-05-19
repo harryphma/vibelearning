@@ -6,7 +6,7 @@ class FlashcardsService {
     const { data, error } = await supabase
       .from('flashcard')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
 
     if (error) throw error
     return data
@@ -46,9 +46,10 @@ class FlashcardsService {
   }
 
   async createMultipleFlashcards(flashcards: Partial<Flashcard>[]): Promise<Flashcard[]> {
-    if (!flashcards.length) return []
-
-    const { data, error } = await supabase.from('flashcard').insert(flashcards).select()
+    const { data, error } = await supabase
+      .from('flashcard')
+      .insert(flashcards)
+      .select()
 
     if (error) throw error
     return data
@@ -76,7 +77,10 @@ class FlashcardsService {
   }
 
   async deleteFlashcardsByDeck(deckId: string): Promise<void> {
-    const { error } = await supabase.from('flashcard').delete().eq('deck_id', deckId)
+    const { error } = await supabase
+      .from('flashcard')
+      .delete()
+      .eq('deck_id', deckId)
 
     if (error) throw error
   }
