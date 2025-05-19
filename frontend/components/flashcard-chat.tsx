@@ -1,9 +1,10 @@
 'use client'
 
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 import { useRouter } from 'next/navigation'
+import debounce from 'lodash/debounce'
 
 import { ChatInput } from '@/components/chat-input'
 import { Button } from '@/components/ui/button'
@@ -73,90 +74,70 @@ export function FlashcardChat({
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
 
   // Only initialize messages when first mounting or when switching to a new deck
-  useEffect(() => {
-    const initializeMessages = async () => {
-      if (isEditMode && selectedDeck) {
-        setIsLoadingMessages(true)
-        try {
-          // Get user info for database queries
-          const userData = await getUserInfo()
-          const userId = userData.id
+  const debouncedSaveMessages = useCallback(
+    debounce(async (messagesToSave: Message[], deckId: string) => {
+      if (!deckId) return
 
-          // Find existing thread for this deck
-          const existingThreads = await messagesService.getAllThreads()
-          const existingThread = existingThreads.find(
-            thread =>
-              thread.name === `Teaching Session - ${selectedDeck.title}` &&
-              thread.creator_id === userId
-          )
+      try {
+        const userData = await getUserInfo()
+        const userId = userData.id
 
-          if (existingThread) {
-            // Get messages from database
-            const dbMessages = await messagesService.getMessagesByThread(existingThread.id)
+        // Find existing thread for this deck
+        const existingThreads = await messagesService.getAllThreads()
+        const existingThread = existingThreads.find(
+          thread =>
+            thread.name === `Teaching Session - ${selectedDeck?.title}` && thread.creator_id === userId
+        )
 
-            // Convert database messages to our Message format
-            const convertedMessages = dbMessages.map(msg => ({
-              id: msg.id.toString(),
-              content: msg.content,
-              sender: msg.role === 'user' ? ('user' as const) : ('ai' as const),
-              timestamp: new Date(msg.created_at),
-            }))
+        if (existingThread) {
+          // Get existing messages from database
+          const existingDbMessages = await messagesService.getMessagesByThread(existingThread.id)
 
-            // Update both local state and store
-            setMessages(convertedMessages)
-            setDeckMessages(selectedDeck.id, convertedMessages)
-          } else {
-            // No existing thread, initialize with welcome message
-            const initialMessage = {
-              id: `deck-${selectedDeck.id}`,
-              content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
-              sender: 'ai' as const,
-              timestamp: new Date(),
+          // Get only the most recent messages that aren't in the database
+          const lastStoredMessage = existingDbMessages[existingDbMessages.length - 1]
+          const lastStoredTime = lastStoredMessage
+            ? new Date(lastStoredMessage.created_at).getTime()
+            : 0
+
+          // Filter messages that were created after the last stored message
+          const newMessages = messagesToSave.filter(msg => {
+            const msgTime = msg.timestamp instanceof Date ? msg.timestamp.getTime() : new Date(msg.timestamp).getTime()
+            return msgTime > lastStoredTime
+          })
+
+          // Only store new messages
+          for (const message of newMessages) {
+            const messageData: Partial<DBMessage> = {
+              content: message.content,
+              role: message.sender === 'user' ? 'user' : 'ai',
+              thread_id: existingThread.id,
             }
+            await messagesService.createMessage(messageData)
+          }
+        } else if (selectedDeck) {
+          // Create a new thread if one doesn't exist
+          const threadData: Partial<MessageThread> = {
+            name: `Teaching Session - ${selectedDeck.title}`,
+            creator_id: userId,
+          }
+          const thread = await messagesService.createThread(threadData)
 
-            setMessages([initialMessage])
-            setDeckMessages(selectedDeck.id, [initialMessage])
+          // Store all messages for the new thread
+          for (const message of messagesToSave) {
+            const messageData: Partial<DBMessage> = {
+              content: message.content,
+              role: message.sender === 'user' ? 'user' : 'ai',
+              thread_id: thread.id,
+            }
+            await messagesService.createMessage(messageData)
           }
-
-          // Update deckFlashcards in the store when selecting a deck to edit
-          if (selectedDeck.flashcards) {
-            setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards)
-          }
-        } catch (error) {
-          console.error('Error loading messages:', error)
-          // Fallback to welcome message if there's an error
-          const initialMessage = {
-            id: `deck-${selectedDeck.id}`,
-            content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
-            sender: 'ai' as const,
-            timestamp: new Date(),
-          }
-          setMessages([initialMessage])
-          setDeckMessages(selectedDeck.id, [initialMessage])
-        } finally {
-          setIsLoadingMessages(false)
         }
-      } else if (!isEditMode && !selectedDeck) {
-        // Reset messages for creating a new deck
-        setMessages([
-          {
-            id: 'new-deck',
-            content:
-              'Welcome to the flashcard creator! What subject would you like to create flashcards for? You can also upload a PDF file to generate flashcards.',
-            sender: 'ai',
-            timestamp: new Date(),
-          },
-        ])
+      } catch (error) {
+        console.error('Error auto-saving messages:', error)
       }
-
-      setAwaitingDeckName(false)
-      setPendingFileCards(null)
-      setPendingSubject(null)
-      setPendingUserId(null)
-    }
-
-    initializeMessages()
-  }, [isEditMode, selectedDeck?.id]) // Only trigger when selected deck ID changes, not the entire object
+    }, 1000),
+    [selectedDeck]
+  )
 
   // Function to update both local state and store messages
   const updateMessages = (newMessages: Message[], deckId?: string) => {
@@ -342,8 +323,10 @@ export function FlashcardChat({
             sender: 'ai' as const,
             timestamp: new Date(),
           }
+          const finalMessages = [...filteredMessages, responseMessage]
+          updateMessages(finalMessages, selectedDeck.id)
 
-          updateMessages([...filteredMessages, responseMessage], selectedDeck.id)
+          debouncedSaveMessages(finalMessages, selectedDeck.id)
         } catch (error) {
           console.error('Error editing flashcards:', error)
           const filteredMessages = updatedMessages.filter(msg => !msg.isLoading)
@@ -354,7 +337,10 @@ export function FlashcardChat({
             timestamp: new Date(),
           }
 
-          updateMessages([...filteredMessages, errorMessage], selectedDeck.id)
+          const finalMessages = [...filteredMessages, errorMessage]
+          updateMessages(finalMessages, selectedDeck.id)
+
+          debouncedSaveMessages(finalMessages, selectedDeck.id)
         }
       } else {
         // Generate flashcards using subject
@@ -441,7 +427,8 @@ export function FlashcardChat({
 
         // Filter messages that were created after the last stored message
         const newMessages = messagesToStore.filter(msg => {
-          return msg.timestamp.getTime() > lastStoredTime
+          const msgTime = msg.timestamp instanceof Date ? msg.timestamp.getTime() : new Date(msg.timestamp).getTime()
+          return msgTime > lastStoredTime
         })
 
         // Only store new messages
@@ -633,3 +620,7 @@ function formatTime(date: Date | string): string {
     minute: 'numeric',
   }).format(dateObject)
 }
+
+
+
+//PHAN CACH
