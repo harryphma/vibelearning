@@ -72,87 +72,48 @@ export function FlashcardChat({
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
 
-
   // Only initialize messages when first mounting or when switching to a new deck
   useEffect(() => {
-    const loadMessagesFromDatabase = async () => {
-      if (isEditMode && selectedDeck) {
-        setIsLoadingMessages(true)
-        try {
-          // Get user info for the creator_id
-          const userData = await getUserInfo()
-          const userId = userData.id
-  
-          // Find the existing thread for this deck
-          const existingThreads = await messagesService.getAllThreads()
-          const existingThread = existingThreads.find(thread => 
-            thread.name === `Teaching Session - ${selectedDeck.title}` && 
-            thread.creator_id === userId
-          )
-  
-          if (existingThread) {
-            // Get messages from the database
-            const dbMessages = await messagesService.getMessagesByThread(existingThread.id)
-            
-            // Convert database messages to UI message format
-            const uiMessages: Message[] = dbMessages.map(msg => ({
-              id: msg.id.toString(),
-              content: msg.content,
-              sender: msg.role as 'user' | 'ai',
-              timestamp: new Date(msg.created_at),
-            }))
-  
-            // Update both local state and store
-            setMessages(uiMessages)
-            setDeckMessages(selectedDeck.id, uiMessages)
-          } else {
-            // If no existing thread, initialize with welcome message
-            const initialMessage = {
-              id: `deck-${selectedDeck.id}`,
-              content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
-              sender: 'ai' as const,
-              timestamp: new Date(),
-            }
-            setMessages([initialMessage])
-            setDeckMessages(selectedDeck.id, [initialMessage])
-          }
-  
-          // Update deckFlashcards in the store when selecting a deck to edit
-          if (selectedDeck.flashcards) {
-            setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards)
-          }
-        } catch (error) {
-          console.error('Error loading messages:', error)
-          // Fallback to welcome message if loading fails
-          const initialMessage = {
-            id: `deck-${selectedDeck.id}`,
-            content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
-            sender: 'ai' as const,
-            timestamp: new Date(),
-          }
-          setMessages([initialMessage])
-          setDeckMessages(selectedDeck.id, [initialMessage])
-        } finally {
-          setIsLoadingMessages(false)
+    if (isEditMode && selectedDeck) {
+      const storedMessages = getDeckMessages(selectedDeck.id)
+
+      // Use stored messages if they exist, otherwise initialize with welcome message
+      if (storedMessages.length > 0) {
+        setMessages(storedMessages)
+      } else {
+        const initialMessage = {
+          id: `deck-${selectedDeck.id}`,
+          content: `You're now editing "${selectedDeck.title}". What would you like to modify or add to this deck?`,
+          sender: 'ai' as const,
+          timestamp: new Date(),
         }
-      } else if (!isEditMode && !selectedDeck) {
-        // Reset messages for creating a new deck
-        setMessages([
-          {
-            id: 'new-deck',
-            content: 'Welcome to the flashcard creator! What subject would you like to create flashcards for? You can also upload a PDF file to generate flashcards.',
-            sender: 'ai',
-            timestamp: new Date(),
-          },
-        ])
+
+        setMessages([initialMessage])
+        // Save this initial message to the store
+        setDeckMessages(selectedDeck.id, [initialMessage])
       }
-  
-      setAwaitingDeckName(false)
-      setPendingFileCards(null)
-      setPendingSubject(null)
-      setPendingUserId(null)
+
+      // Update deckFlashcards in the store when selecting a deck to edit
+      if (selectedDeck.flashcards) {
+        setDeckFlashcards(selectedDeck.id, selectedDeck.flashcards)
+      }
+    } else if (!isEditMode && !selectedDeck) {
+      // Reset messages for creating a new deck
+      setMessages([
+        {
+          id: 'new-deck',
+          content:
+            'Welcome to the flashcard creator! What subject would you like to create flashcards for? You can also upload a PDF file to generate flashcards.',
+          sender: 'ai',
+          timestamp: new Date(),
+        },
+      ])
     }
-    loadMessagesFromDatabase()
+
+    setAwaitingDeckName(false)
+    setPendingFileCards(null)
+    setPendingSubject(null)
+    setPendingUserId(null)
   }, [isEditMode, selectedDeck?.id]) // Only trigger when selected deck ID changes, not the entire object
 
   // Function to update both local state and store messages
@@ -161,6 +122,7 @@ export function FlashcardChat({
 
     // If in edit mode and we have a valid deck, save messages to store
     if (isEditMode && selectedDeck && deckId) {
+      // Store all messages to maintain conversation history
       setDeckMessages(deckId, newMessages)
     }
   }
@@ -426,6 +388,30 @@ export function FlashcardChat({
       if (existingThread) {
         console.log('Using existing thread:', existingThread)
         thread = existingThread
+
+        const existingDbMessages = await messagesService.getMessagesByThread(thread.id)
+
+        // Get only the most recent messages that aren't in the database
+        const lastStoredMessage = existingDbMessages[existingDbMessages.length - 1]
+        const lastStoredTime = lastStoredMessage
+          ? new Date(lastStoredMessage.created_at).getTime()
+          : 0
+
+        // Filter messages that were created after the last stored message
+        const newMessages = messagesToStore.filter(msg => {
+          return msg.timestamp.getTime() > lastStoredTime
+        })
+
+        // Only store new messages
+        for (const message of newMessages) {
+          const messageData: Partial<DBMessage> = {
+            content: message.content,
+            role: message.sender === 'user' ? 'user' : 'ai',
+            thread_id: thread.id,
+          }
+          console.log('Storing new message:', messageData)
+          await messagesService.createMessage(messageData)
+        }
       } else {
         // Create a new thread only if one doesn't exist
         const threadData: Partial<MessageThread> = {
@@ -435,17 +421,17 @@ export function FlashcardChat({
         console.log('Creating new thread with data:', threadData)
         thread = await messagesService.createThread(threadData)
         console.log('New thread created:', thread)
-      }
 
-      // Store all messages in the database
-      for (const message of messagesToStore) {
-        const messageData: Partial<DBMessage> = {
-          content: message.content,
-          role: message.sender === 'user' ? 'user' : 'ai',
-          thread_id: thread.id,
+        // Store all messages for the new thread
+        for (const message of messagesToStore) {
+          const messageData: Partial<DBMessage> = {
+            content: message.content,
+            role: message.sender === 'user' ? 'user' : 'ai',
+            thread_id: thread.id,
+          }
+          console.log('Storing message:', messageData)
+          await messagesService.createMessage(messageData)
         }
-        console.log('Storing message:', messageData)
-        await messagesService.createMessage(messageData)
       }
 
       // Create a complete deck with the latest flashcards
@@ -524,13 +510,13 @@ export function FlashcardChat({
           isFullPage ? 'max-h-[70vh]' : 'max-h-[calc(100vh-260px)]'
         )}
       >
-      {isLoadingMessages && (
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-pulse-dot1 h-2 w-2 rounded-full bg-current"></div>
-          <div className="animate-pulse-dot2 h-2 w-2 rounded-full bg-current"></div>
-          <div className="animate-pulse-dot3 h-2 w-2 rounded-full bg-current"></div>
-        </div>
-      )}
+        {isLoadingMessages && (
+          <div className="flex h-full items-center justify-center">
+            <div className="animate-pulse-dot1 h-2 w-2 rounded-full bg-current"></div>
+            <div className="animate-pulse-dot2 h-2 w-2 rounded-full bg-current"></div>
+            <div className="animate-pulse-dot3 h-2 w-2 rounded-full bg-current"></div>
+          </div>
+        )}
         <div className="space-y-4 pb-1">
           {messages.map((message, index) => (
             <div
